@@ -1,9 +1,9 @@
 all: blinker.bram.elf
 
-AS := riscv64-unknown-elf-as
-LD := riscv64-unknown-elf-ld
+AS := riscv64-linux-gnu-as
+LD := riscv64-linux-gnu-ld
 ASFLAGS := -march=rv32i -mabi=ilp32 -mno-relax
-LDFLAGS := -T bram.ld -m elf32lriscv -nostdlib -norelax
+LDFLAGS := -T bram.ld -m elf32lriscv -nostdlib -no-relax
 
 %.o: %.S
 	$(AS) $(ASFLAGS) $< -o $@
