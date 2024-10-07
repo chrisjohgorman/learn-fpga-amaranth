@@ -4,7 +4,7 @@ from amaranth_boards.cmod_a7 import *
 from top import Top
 
 if __name__ == "__main__":
-    platform = CmodA7_35Platform(toolchain="Symbiflow")
+    platform = CmodA7_35Platform(toolchain="Vivado")
     gpio = ("gpio", 0)
     platform.add_resources([
         Resource("uart", 1,
