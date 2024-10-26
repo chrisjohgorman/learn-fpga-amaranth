@@ -1,7 +1,11 @@
+#!/usr/bin/env python3
+
+""" This module blinks the leds on a Cmod A7 FPGA slowly enough to see """
+
 from soc import SOC
 from clockworks import Clockworks
 from amaranth_boards.cmod_a7 import CmodA7_35Platform
-from amaranth import Module, ClockDomain
+from amaranth import Module
 
 
 # A platform contains board specific information about FPGA pin assignments,
@@ -17,7 +21,11 @@ soc = SOC()
 # The SOC is turned into a submodule (fragment) of our top level module.
 m.submodules.soc = soc
 
-m.submodules.slclk = slclk = Clockworks(slow=21)
+# Instantiate the clockwork with a divider of 2^21
+slow_clk = Clockworks(slow=21)
+
+# Turn the clockwork into a submodule of the top level module
+m.submodules.slow_clk = slow_clk
 
 # The platform allows access to the various resources defined by the board
 # definition from amaranth-boards.
