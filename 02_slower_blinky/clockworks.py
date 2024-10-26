@@ -1,6 +1,7 @@
-from amaranth import *
+from amaranth import Elaboratable, Signal, Module, ClockDomain, ClockSignal
 
 # This module handles clock division and provides a new 'slow' clock domain
+
 
 class Clockworks(Elaboratable):
 
@@ -9,7 +10,7 @@ class Clockworks(Elaboratable):
         # Since the module provides a new clock domain, which is accessible
         # via the top level module, we don't need to explicitly provide the
         # slow clock signal as an output.
-
+        
         self.slow = slow
 
     def elaborate(self, platform):
