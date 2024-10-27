@@ -3,9 +3,14 @@
 """ This module handles clock division and provides a new 'slow' clock
     domain """
 
-from amaranth import Signal, Module, ClockDomain, ClockSignal
+from amaranth import Signal, Module, ClockSignal
 from amaranth.lib import wiring
 from amaranth.lib.wiring import Out
+
+# FIXME find out if we're being simulated or not and make this a value
+# based on the conditional
+# This must be set to sync for simulation and slow to program the FPGA
+CLOCKWORKS_DOMAIN_NAME = "sync"
 
 
 class Clockworks(wiring.Component):
@@ -52,9 +57,6 @@ class Clockworks(wiring.Component):
             # When no division is requested, just use the clock signal of
             # the default 'sync' domain.
             m.d.comb += clk.eq(ClockSignal("sync"))
-
-        # Create the new clock domain
-        m.domains += ClockDomain("slow")
 
         # Assign the slow clock to the clock signal of the new domain
         m.d.comb += ClockSignal("slow").eq(clk)

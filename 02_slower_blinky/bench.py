@@ -1,26 +1,23 @@
-from amaranth import *
-from amaranth.sim import *
-
 from soc import SOC
+from amaranth.sim import Simulator, Period
 
 soc = SOC()
 
-sim = Simulator(soc)
-
 prev_leds = 0
 
-def proc():
+async def testbench(ctx):
     global prev_leds
     while True:
-        leds = yield soc.leds
+        leds = ctx.get(soc.leds)
         if leds != prev_leds:
             print("LEDS = {:05b}".format(leds))
             prev_leds = leds
-        yield
+        await ctx.tick()
 
-sim.add_clock(1e-6)
-sim.add_sync_process(proc)
+sim = Simulator(soc)
+sim.add_clock(Period(MHz=1))
+sim.add_testbench(testbench)
 
 with sim.write_vcd('bench.vcd'):
     # Let's run for a quite long time
-    sim.run_until(2)
+    sim.run_until(Period(MHz=1) * 100)
