@@ -1,7 +1,6 @@
 
 """ This module provides the system on chip (SOC) implementation """
 
-from clockworks import CLOCKWORKS_DOMAIN_NAME
 from amaranth import Module, Signal
 from amaranth.lib import wiring
 from amaranth.lib.wiring import Out
@@ -29,10 +28,10 @@ class SOC(wiring.Component):
         # The clockwork provides a new clock domain called 'slow'.
         # We replace the default sync domain with the new one to have the
         # counter run slower.
-        if CLOCKWORKS_DOMAIN_NAME == "slow":
-            m.d.slow += count.eq(count + 1)
-        else:
+        if platform is None:
             m.d.sync += count.eq(count + 1)
+        else:
+            m.d.slow += count.eq(count + 1)
         m.d.comb += self.leds.eq(count)
 
         return m
