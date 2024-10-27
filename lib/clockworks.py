@@ -10,7 +10,7 @@ from amaranth.lib.wiring import Out
 # FIXME find out if we're being simulated or not and make this a value
 # based on the conditional
 # This must be set to sync for simulation and slow to program the FPGA
-CLOCKWORKS_DOMAIN_NAME = "sync"
+CLOCKWORKS_DOMAIN_NAME = "slow"
 
 
 class Clockworks(wiring.Component):
