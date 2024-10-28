@@ -1,7 +1,6 @@
 
 """ This module provides the system on chip (SOC) implementation """
 
-from clockworks import CLOCKWORKS_DOMAIN_NAME
 from amaranth import Module, Signal, Array, Mux
 from amaranth.lib import wiring
 from amaranth.lib.wiring import Out
@@ -63,10 +62,10 @@ class SOC(wiring.Component):
         pc = Signal(5)
         mem = Array([Signal(5, init=x) for x in sequence])
 
-        if CLOCKWORKS_DOMAIN_NAME == "slow":
-            m.d.slow += pc.eq(Mux(pc == len(sequence), 0, pc + 1))
-        else:
+        if platform is None:
             m.d.sync += pc.eq(Mux(pc == len(sequence), 0, pc + 1))
+        else:
+            m.d.slow += pc.eq(Mux(pc == len(sequence), 0, pc + 1))
 
         m.d.comb += self.leds.eq(mem[pc])
 
