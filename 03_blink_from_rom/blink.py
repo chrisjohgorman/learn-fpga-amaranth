@@ -21,13 +21,10 @@ soc = SOC()
 # The SOC is turned into a submodule (fragment) of our top level module.
 m.submodules.soc = soc
 
-if platform is None:
-    slclk = Clockworks()
-else:
-    # for amaranth version 0.6 define slow domain in top module
-    # Instantiate the clockwork with a divider of 2^21
-    m.domains += ClockDomain(CLOCKWORKS_DOMAIN_NAME)
-    slclk = Clockworks(slow=21)
+# for amaranth version 0.6 define slow domain in top module
+# Instantiate the clockwork with a divider of 2^21
+m.domains += ClockDomain(CLOCKWORKS_DOMAIN_NAME)
+slclk = Clockworks(slow=21)
 
 # Turn the clockwork into a submodule of the top level module
 m.submodules.slclk = slclk
