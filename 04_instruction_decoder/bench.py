@@ -24,12 +24,12 @@ def proc():
             if (yield soc.isSystem):
                 print("SYSTEM")
                 break
-        yield
+        yield Tick()
         prev_pc = pc
 
-sim.add_clock(1e-6)
-sim.add_sync_process(proc)
+sim.add_clock(Period(MHz=1))
+sim.add_process(proc)
 
 with sim.write_vcd('bench.vcd'):
     # Let's run for a quite long time
-    sim.run_until(2)
+    sim.run_until(Period(MHz=1) * 100)
