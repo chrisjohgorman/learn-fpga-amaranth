@@ -119,8 +119,4 @@ class SOC(wiring.Component):
             export(Iimm, "Iimm")
             export(funct3, "funct3")
 
-        # Assign important signals to LEDS
-        m.d.comb += self.leds.eq(Mux(isSystem, 31, Cat(isLoad, Cat(
-            isStore, Cat(isALUimm, Cat(isALUreg, pc[0]))))))
-
         return m
