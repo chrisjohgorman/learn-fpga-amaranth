@@ -97,7 +97,7 @@ class SOC(wiring.Component):
 
         # Export signals for simulation
         def export(signal, name):
-            if type(signal) is not Signal:
+            if not isinstance(signal, Signal):
                 newsig = Signal(signal.shape(), name = name)
                 m.d.comb += newsig.eq(signal)
             else:
