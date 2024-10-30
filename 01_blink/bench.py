@@ -3,6 +3,7 @@
 """ This module emulates the values of leds in binary """
 
 from soc import SOC
+from amaranth import Period
 from amaranth.sim import Simulator, Tick
 
 
@@ -34,4 +35,4 @@ sim.add_clock(Period(MHz=1))
 sim.add_process(proc)
 
 with sim.write_vcd('bench.vcd'):
-    sim.run_until(Period(MHz=1) * 100)
+    sim.run_until(Period(MHz=1) * 50)
