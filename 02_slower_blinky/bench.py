@@ -1,17 +1,28 @@
+#!/usr/bin/env python3
+
+""" This module emulates the values of leds in binary """
+
 from soc import SOC
 from amaranth.sim import Simulator, Period
 
 soc = SOC()
 
-prev_leds = 0
+class Global:
+
+    """ Class with member to get rid of use of the global keyword. """
+
+    prev_leds = 0
+
 
 async def testbench(ctx):
-    global prev_leds
+
+    """ Testbench to simulate the setting of values of leds """
+
     while True:
         leds = ctx.get(soc.leds)
-        if leds != prev_leds:
-            print("LEDS = {:05b}".format(leds))
-            prev_leds = leds
+        if leds != Global.prev_leds:
+            print(f"LEDS = {leds:>05b}")
+            Global.prev_leds = leds
         await ctx.tick()
 
 sim = Simulator(soc)
@@ -20,4 +31,4 @@ sim.add_testbench(testbench)
 
 with sim.write_vcd('bench.vcd'):
     # Let's run for a quite long time
-    sim.run_until(Period(MHz=1) * 100)
+    sim.run_until(Period(MHz=1) * 50)
