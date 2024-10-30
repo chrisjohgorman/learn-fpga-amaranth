@@ -20,7 +20,9 @@ class SOC(wiring.Component):
 
         """ The clockwork provides a new clock domain called 'slow'.
             We replace the default sync domain with the new one to have the
-            counter run slower. """
+            counter run slower. If we are emulating we run the 'sync' domain
+            instead of the 'slow'.  We put the sequence in memory before
+            interpreting it from the leds. """
 
         m = Module()
 
