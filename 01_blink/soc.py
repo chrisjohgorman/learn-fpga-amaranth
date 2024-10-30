@@ -1,7 +1,14 @@
-from amaranth import *
+
+""" This module provides a system on chip (SOC) implementation of
+    blinking the leds on the FPGA. """
+
+from amaranth import Elaboratable, Module, Signal
+
 
 # Any Elaboratable class is used to generate HDL output
 class SOC(Elaboratable):
+
+    """ This class blinks the leds on the FPGA """
 
     def __init__(self):
 
@@ -12,6 +19,12 @@ class SOC(Elaboratable):
         self.leds = Signal(5)
 
     def elaborate(self, platform):
+
+        """ We create a new module and signal.  Then we sync to the
+            positive edge of the implicit clock signal and output
+            a different led output value each clock tick.  Unfortunatley
+            we cannot see the difference between the led blinks as the
+            clock is ticking too fast. """
 
         # Create a new Amaranth module
         m = Module()
