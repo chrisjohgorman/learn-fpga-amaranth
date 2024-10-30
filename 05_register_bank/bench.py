@@ -39,5 +39,4 @@ sim.add_testbench(testbench)
 
 with sim.write_vcd('bench.vcd', 'bench.gtkw', traces=soc.ports):
     # Let's run for a quite long time
-    #sim.run_until(Period(MHz=1) * 1000)
-    sim.run_until(2, )
+    sim.run_until(Period(MHz=1) * 10000)
