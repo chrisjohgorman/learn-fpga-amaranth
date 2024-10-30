@@ -7,6 +7,7 @@ from amaranth.sim import Simulator, Period
 
 soc = SOC()
 
+
 class Global:
 
     """ Class with member to get rid of use of the global keyword. """
