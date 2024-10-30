@@ -26,9 +26,9 @@ class SOC(wiring.Component):
     def elaborate(self, platform):
 
         """ The clockwork provides a new clock domain called 'slow'.
-            we replace the default sync domain with the new one to have the 
+            we replace the default sync domain with the new one to have the
             counter run slower unless we are simulating.  This is required
-            as the leds blink too quickly to tell if they are working 
+            as the leds blink too quickly to tell if they are working
             otherwise. """
 
         m = Module()
