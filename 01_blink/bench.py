@@ -30,8 +30,8 @@ def proc():
         yield Tick()
 
 
-sim.add_clock(1e-6)
+sim.add_clock(Period(MHz=1))
 sim.add_process(proc)
 
 with sim.write_vcd('bench.vcd'):
-    sim.run_until(2e-5)
+    sim.run_until(Period(MHz=1) * 100)
