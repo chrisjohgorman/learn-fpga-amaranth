@@ -15,7 +15,7 @@ class Global:
 
     """ Class with member to get rid of use of global keyword. """
 
-    PREV_LEDS = 0
+    prev_leds = 0
 
 
 def proc():
@@ -24,9 +24,9 @@ def proc():
 
     while True:
         leds = yield soc.leds
-        if leds != Global.PREV_LEDS:
+        if leds != Global.prev_leds:
             print(f"LEDS = {leds:>05b}")
-            Global.PREV_LEDS = leds
+            Global.prev_leds = leds
         yield Tick()
 
 
