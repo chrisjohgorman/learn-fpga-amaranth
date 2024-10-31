@@ -41,6 +41,6 @@ def proc():
 sim.add_clock(Period(MHz=1))
 sim.add_process(proc)
 
-with sim.write_vcd('bench.vcd'):
+with sim.write_vcd('bench.vcd', 'bench.gtkw', traces=soc.ports):
     # Let's run for a quite long time
     sim.run_until(Period(MHz=1) * 100)
