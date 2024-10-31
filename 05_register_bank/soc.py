@@ -70,45 +70,45 @@ class SOC(wiring.Component):
         rs1 = Signal(32)
         rs2 = Signal(32)
 
-        writeBackData = C(0)
-        writeBackEn = C(0)
+        write_back_data = C(0)
+        write_back_en = C(0)
 
         # Opcode decoder
-        isALUreg = instr[0:7] == 0b0110011
-        isALUimm = instr[0:7] == 0b0010011
-        isBranch = instr[0:7] == 0b1100011
-        isJALR =   instr[0:7] == 0b1100111
-        isJAL =    instr[0:7] == 0b1101111
-        isAUIPC =  instr[0:7] == 0b0010111
-        isLUI =    instr[0:7] == 0b0110111
-        isLoad =   instr[0:7] == 0b0000011
-        isStore =  instr[0:7] == 0b0100011
-        isSystem = instr[0:7] == 0b1110011
+        is_alu_reg = instr[0:7] == 0b0110011
+        is_alu_imm = instr[0:7] == 0b0010011
+        is_branch =  instr[0:7] == 0b1100011
+        is_jalr =    instr[0:7] == 0b1100111
+        is_jal =     instr[0:7] == 0b1101111
+        is_auipc =   instr[0:7] == 0b0010111
+        is_lui =     instr[0:7] == 0b0110111
+        is_load =    instr[0:7] == 0b0000011
+        is_store =   instr[0:7] == 0b0100011
+        is_system =  instr[0:7] == 0b1110011
 
         # Immediate format decoder
-        Uimm = (Cat(Const(0).replicate(12), instr[12:32]))
-        Iimm = (Cat(instr[20:31], instr[31].replicate(21)))
-        Simm = (Cat(instr[7:12], instr[25:31], instr[31].replicate(21))),
-        Bimm = (Cat(0, instr[8:12], instr[25:31], instr[7],
-                    instr[31].replicate(20)))
-        Jimm = (Cat(0, instr[21:31], instr[20], instr[12:20],
-                    instr[31].replicate(12)))
+        u_imm = (Cat(Const(0).replicate(12), instr[12:32]))
+        i_imm = (Cat(instr[20:31], instr[31].replicate(21)))
+        s_imm = (Cat(instr[7:12], instr[25:31], instr[31].replicate(21)))
+        b_imm = (Cat(0, instr[8:12], instr[25:31], instr[7],
+                 instr[31].replicate(20)))
+        j_imm = (Cat(0, instr[21:31], instr[20], instr[12:20],
+                 instr[31].replicate(12)))
 
         # Register addresses decoder
-        rs1Id = instr[15:20]
-        rs2Id = instr[20:25]
-        rdId =  instr[7:12]
+        rs1_id = instr[15:20]
+        rs2_id = instr[20:25]
+        rd_id =  instr[7:12]
 
         # Function code decdore
         funct3 = instr[12:15]
         funct7 = instr[25:32]
 
         # Data write back
-        with m.If(writeBackEn & (rdId != 0)):
+        with m.If(write_back_en & (rd_id != 0)):
             if platform is None:
-                m.d.sync += regs[rdId].eq(writeBackData)
+                m.d.sync += regs[rd_id].eq(write_back_data)
             else:
-                m.d.slow += regs[rdId].eq(writeBackData)
+                m.d.slow += regs[rd_id].eq(write_back_data)
 
         # Main finite state machine (FSM)
         with m.FSM(reset="FETCH_INSTR", domain="slow") as fsm:
@@ -117,8 +117,8 @@ class SOC(wiring.Component):
                 m.next = "FETCH_REGS"
             with m.State("FETCH_REGS"):
                 m.d.sync += [
-                    rs1.eq(regs[rs1Id]),
-                    rs2.eq(regs[rs2Id])
+                    rs1.eq(regs[rs1_id]),
+                    rs2.eq(regs[rs2_id])
                 ]
                 m.next = "EXECUTE"
             with m.State("EXECUTE"):
@@ -127,7 +127,7 @@ class SOC(wiring.Component):
 
         # Assign important signals to LEDS
         # Note: fsm.state is only accessible outside of the FSM context
-        m.d.comb += self.leds.eq(Mux(isSystem, 31, (1 << fsm.state)))
+        m.d.comb += self.leds.eq(Mux(is_system, 31, (1 << fsm.state)))
 
         # Export signals for simulation
         def export(signal, name):
@@ -143,15 +143,15 @@ class SOC(wiring.Component):
             export(ClockSignal("slow"), "slow_clk")
             export(pc, "pc")
             export(instr, "instr")
-            export(isALUreg, "isALUreg")
-            export(isALUimm, "isALUimm")
-            export(isLoad, "isLoad")
-            export(isStore, "isStore")
-            export(isSystem, "isSystem")
-            export(rdId, "rdId")
-            export(rs1Id, "rs1Id")
-            export(rs2Id, "rs2Id")
-            export(Iimm, "Iimm")
+            export(is_alu_reg, "is_alu_reg")
+            export(is_alu_imm, "is_alu_imm")
+            export(is_load, "is_load")
+            export(is_store, "is_store")
+            export(is_system, "is_system")
+            export(rd_id, "rd_id")
+            export(rs1_id, "rs1_id")
+            export(rs2_id, "rs2_id")
+            export(i_imm, "i_imm")
             export(funct3, "funct3")
 
         return m
