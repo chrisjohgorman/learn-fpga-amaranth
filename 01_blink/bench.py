@@ -3,8 +3,7 @@
 """ This module emulates the values of leds in binary """
 
 from soc import SOC
-from amaranth import Period
-from amaranth.sim import Simulator, Tick
+from amaranth.sim import Simulator, Tick, Period
 
 
 soc = SOC()
@@ -19,20 +18,20 @@ class Global:
     prev_leds = 0
 
 
-def proc():
+async def testbench(ctx):
 
     """ Process to simulate the setting of values of leds """
 
     while True:
-        leds = yield soc.leds
+        leds = ctx.get(soc.leds)
         if leds != Global.prev_leds:
             print(f"LEDS = {leds:>05b}")
             Global.prev_leds = leds
-        yield Tick()
+        await ctx.tick()
 
 
 sim.add_clock(Period(MHz=1))
-sim.add_process(proc)
+sim.add_testbench(testbench)
 
 with sim.write_vcd('bench.vcd'):
     sim.run_until(Period(MHz=1) * 50)
