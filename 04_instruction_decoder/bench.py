@@ -1,31 +1,42 @@
-from amaranth import *
-from amaranth.sim import *
+#!/usr/bin/env python3
+
+""" This module emulates the instruction decoder """
 
 from soc import SOC
+from amaranth.sim import Simulator, Period, Tick
 
 soc = SOC()
 
 sim = Simulator(soc)
 
-prev_pc = 0
+
+class Global:
+
+    """ Class with member to get rid of use of global keyword. """
+
+    prev_pc = 0
+
 
 def proc():
+
+    """ Proc function to test values from the instruction decoder. """
+
     while True:
-        global prev_pc
         pc = yield soc.pc
-        if prev_pc != pc:
-            print("pc={}".format(pc))
-            print("instr={:#032b}".format((yield soc.instr)))
-            print("LEDS = {:05b}".format((yield soc.leds)))
-            if (yield soc.isALUreg):
-                print("ALUreg rd={} rs1={} rs2={} funct3={}".format(
-                    (yield soc.rdId), (yield soc.rs1Id), (yield soc.Iimm),
-                    (yield soc.funct3)))
-            if (yield soc.isSystem):
+        if Global.prev_pc != pc:
+            print(f"pc={pc}")
+            print(f"instr={(yield soc.instr):>032b}")
+            print(f"LEDS = {(yield soc.leds):>05b}")
+            if (yield soc.is_alu_reg):
+                print(f"ALUreg rd={(yield soc.rd_id)} rs1={(yield soc.rs1_id)}"
+                      f" rs2={(yield soc.rs2_id)} i_imm={(yield soc.i_imm)} "
+                      f"funct3={(yield soc.funct3)}")
+            if (yield soc.is_system):
                 print("SYSTEM")
                 break
         yield Tick()
-        prev_pc = pc
+        Global.prev_pc = pc
+
 
 sim.add_clock(Period(MHz=1))
 sim.add_process(proc)

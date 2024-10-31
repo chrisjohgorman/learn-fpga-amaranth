@@ -21,7 +21,6 @@ class SOC(wiring.Component):
         super().__init__()
 
     def elaborate(self, platform):
-
         """ The clockwork provides a new clock domain called 'slow'.
             We replace the default sync domain with the new one to have the
             counter run slower unless we are simulating. """
@@ -29,51 +28,52 @@ class SOC(wiring.Component):
         m = Module()
 
         sequence = [
-                #       24      16       8       0
-                # .......|.......|.......|.......|
-                #R         rs2  rs1 f3   rd     op
-                #I         imm  rs1 f3   rd     op
-                #S    imm  rs2  rs1 f3  imm     op
-                # ......|....|....|..|....|......|
-                0b00000000000000000000000000110011,  # R add  x0, x0, x0
-                0b00000000000000000000000010110011,  # R add  x1, x0, x0
-                0b00000000000100001000000010010011,  # I addi x1, x1,  1
-                0b00000000000100001000000010010011,  # I addi x1, x1,  1
-                0b00000000000100001000000010010011,  # I addi x1, x1,  1
-                0b00000000000100001000000010010011,  # I addi x1, x1,  1
-                0b00000000000000001010000100000011,  # I lw   x2, 0(x1)
-                0b00000000000100010010000000100011,  # S sw   x2, 0(x1)
-                0b00000000000100000000000001110011   # S ebreak
+            #       24      16       8       0
+            # .......|.......|.......|.......|
+            #R         rs2  rs1 f3   rd     op
+            #I         imm  rs1 f3   rd     op
+            #S    imm  rs2  rs1 f3  imm     op
+            # ......|....|....|..|....|......|
+            0b00000000000000000000000000110011,  # R add  x0, x0, x0
+            0b00000000000000000000000010110011,  # R add  x1, x0, x0
+            0b00000000000100001000000010010011,  # I addi x1, x1,  1
+            0b00000000000100001000000010010011,  # I addi x1, x1,  1
+            0b00000000000100001000000010010011,  # I addi x1, x1,  1
+            0b00000000000100001000000010010011,  # I addi x1, x1,  1
+            0b00000000000000001010000100000011,  # I lw   x2, 0(x1)
+            0b00000000000100010010000000100011,  # S sw   x2, 0(x1)
+            0b00000000000100000000000001110011   # S ebreak
         ]
 
         pc = Signal(32)
         instr = Signal(32, init=0b0110011)
         mem = Array([Signal(32, init=x) for x in sequence])
 
-
         # Opcode decoder
-        isALUreg = instr[0:7] == 0b0110011
-        isALUimm = instr[0:7] == 0b0010011
-        isBranch = instr[0:7] == 0b1100011
-        isJALR =   instr[0:7] == 0b1100111
-        isJAL =    instr[0:7] == 0b1101111
-        isAUIPC =  instr[0:7] == 0b0010111
-        isLUI =    instr[0:7] == 0b0110111
-        isLoad =   instr[0:7] == 0b0000011
-        isStore =  instr[0:7] == 0b0100011
-        isSystem = instr[0:7] == 0b1110011
+        is_alu_reg = instr[0:7] == 0b0110011
+        is_alu_imm = instr[0:7] == 0b0010011
+        is_branch =  instr[0:7] == 0b1100011
+        is_jalr =    instr[0:7] == 0b1100111
+        is_jal =     instr[0:7] == 0b1101111
+        is_auipc =   instr[0:7] == 0b0010111
+        is_lui =     instr[0:7] == 0b0110111
+        is_load =    instr[0:7] == 0b0000011
+        is_store =   instr[0:7] == 0b0100011
+        is_system =  instr[0:7] == 0b1110011
 
         # Immediate format decoder
-        Uimm = (Cat(Const(0).replicate(12), instr[12:32]))
-        Iimm = (Cat(instr[20:31], instr[31].replicate(21)))
-        Simm = (Cat(instr[7:12], instr[25:31], instr[31].replicate(21))),
-        Bimm = (Cat(0, instr[8:12], instr[25:31], instr[7], instr[31].replicate(20)))
-        Jimm = (Cat(0, instr[21:31], instr[20], instr[12:20], instr[31].replicate(12)))
+        u_imm = (Cat(Const(0).replicate(12), instr[12:32]))
+        i_imm = (Cat(instr[20:31], instr[31].replicate(21)))
+        s_imm = (Cat(instr[7:12], instr[25:31], instr[31].replicate(21)))
+        b_imm = (Cat(0, instr[8:12], instr[25:31],
+                 instr[7], instr[31].replicate(20)))
+        j_imm = (Cat(0, instr[21:31], instr[20],
+                 instr[12:20], instr[31].replicate(12)))
 
         # Register addresses decoder
-        rs1Id = instr[15:20]
-        rs2Id = instr[20:25]
-        rdId =  instr[7:12]
+        rs1_id = instr[15:20]
+        rs2_id = instr[20:25]
+        rd_id = instr[7:12]
 
         # Function code decoder
         funct3 = instr[12:15]
@@ -83,17 +83,20 @@ class SOC(wiring.Component):
         if platform is None:
             m.d.sync += [
                 instr.eq(mem[pc]),
-                pc.eq(Mux(isSystem, 0, pc + 1))
+                pc.eq(Mux(is_system, 0, pc + 1))
             ]
         else:
             m.d.slow += [
-                    instr.eq(mem[pc]),
-                    pc.eq(Mux(isSystem, 0, pc + 1))
+                instr.eq(mem[pc]),
+                pc.eq(Mux(is_system, 0, pc + 1))
             ]
 
         # Assign important signals to LEDS
-        m.d.comb += self.leds.eq(Mux(isSystem, 31,
-            Cat(isLoad, isStore, isALUimm, isALUreg, pc[0])))
+        m.d.comb += self.leds.eq(
+                Mux(is_system,
+                    31,
+                    Cat(is_load, is_store, is_alu_imm, is_alu_reg, pc[0]))
+                )
 
         # Export signals for simulation
         def export(signal, name):
@@ -108,15 +111,15 @@ class SOC(wiring.Component):
         if platform is None:
             export(pc, "pc")
             export(instr, "instr")
-            export(isALUreg, "isALUreg")
-            export(isALUimm, "isALUimm")
-            export(isLoad, "isLoad")
-            export(isStore, "isStore")
-            export(isSystem, "isSystem")
-            export(rdId, "rdId")
-            export(rs1Id, "rs1Id")
-            export(rs2Id, "rs2Id")
-            export(Iimm, "Iimm")
+            export(is_alu_reg, "is_alu_reg")
+            export(is_alu_imm, "is_alu_imm")
+            export(is_load, "is_load")
+            export(is_store, "is_store")
+            export(is_system, "is_system")
+            export(rd_id, "rd_id")
+            export(rs1_id, "rs1_id")
+            export(rs2_id, "rs2_id")
+            export(i_imm, "i_imm")
             export(funct3, "funct3")
 
         return m
