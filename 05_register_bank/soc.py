@@ -9,7 +9,7 @@ from amaranth.lib.wiring import Out
 
 class SOC(wiring.Component):
 
-    """ this class describes the SOC registger bank """
+    """ This class describes the SOC register bank """
 
     leds: Out(5)
 
@@ -18,17 +18,12 @@ class SOC(wiring.Component):
         # Signals in this list can easily be plotted as vcd traces
         self.ports = []
 
-        self.cw = []
-
         super().__init__()
 
     def elaborate(self, platform):
 
-        """ The clockwork provides a new clock domain called 'slow'.
-            we replace the default sync domain with the new one to have the
-            counter run slower unless we are simulating.  This is required
-            as the leds blink too quickly to tell if they are working
-            otherwise. """
+        """ The register bank groups registers together for use by
+            assembly language programming. """
 
         m = Module()
 

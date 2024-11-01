@@ -51,7 +51,7 @@ async def testbench(ctx):
         if ctx.get(soc.is_system):
             print("SYSTEM")
         # each instruction requires three clock ticks to execute
-        await ctx.tick().repeat(3)
+        await ctx.tick()
 
 
 sim = Simulator(soc)
