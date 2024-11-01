@@ -2,7 +2,6 @@
 """ This module provides the system on chip (SOC) implementation
     for the register bank """
 
-from clockworks import Clockworks
 from amaranth import Module, Signal, Array, Mux, Cat, Const, C, ClockSignal
 from amaranth.lib import wiring
 from amaranth.lib.wiring import Out
@@ -32,10 +31,6 @@ class SOC(wiring.Component):
             otherwise. """
 
         m = Module()
-
-        if platform is None:
-            self.cw = Clockworks()
-            m.submodules.cw = self.cw
 
         # Instruction sequence to be executed
         sequence = [
@@ -103,27 +98,44 @@ class SOC(wiring.Component):
         funct3 = instr[12:15]
         funct7 = instr[25:32]
 
-        # Data write back
-        with m.If(write_back_en & (rd_id != 0)):
-            if platform is None:
+        if platform is None:
+            # Data write back
+            with m.If(write_back_en & (rd_id != 0)):
                 m.d.sync += regs[rd_id].eq(write_back_data)
-            else:
+
+            # Main finite state machine (FSM) for bench
+            with m.FSM(reset="FETCH_INSTR", domain="sync") as fsm:
+                with m.State("FETCH_INSTR"):
+                    m.d.sync += instr.eq(mem[pc])
+                    m.next = "FETCH_REGS"
+                with m.State("FETCH_REGS"):
+                    m.d.sync += [
+                        rs1.eq(regs[rs1_id]),
+                        rs2.eq(regs[rs2_id])
+                    ]
+                    m.next = "EXECUTE"
+                with m.State("EXECUTE"):
+                    m.d.sync += pc.eq(pc + 1)
+                    m.next = "FETCH_INSTR"
+        else:
+            # Data write back
+            with m.If(write_back_en & (rd_id != 0)):
                 m.d.slow += regs[rd_id].eq(write_back_data)
 
-        # Main finite state machine (FSM)
-        with m.FSM(reset="FETCH_INSTR", domain="slow") as fsm:
-            with m.State("FETCH_INSTR"):
-                m.d.sync += instr.eq(mem[pc])
-                m.next = "FETCH_REGS"
-            with m.State("FETCH_REGS"):
-                m.d.sync += [
-                    rs1.eq(regs[rs1_id]),
-                    rs2.eq(regs[rs2_id])
-                ]
-                m.next = "EXECUTE"
-            with m.State("EXECUTE"):
-                m.d.sync += pc.eq(pc + 1)
-                m.next = "FETCH_INSTR"
+            # Main finite state machine (FSM) for FPGA
+            with m.FSM(reset="FETCH_INSTR", domain="slow") as fsm:
+                with m.State("FETCH_INSTR"):
+                    m.d.sync += instr.eq(mem[pc])
+                    m.next = "FETCH_REGS"
+                with m.State("FETCH_REGS"):
+                    m.d.sync += [
+                        rs1.eq(regs[rs1_id]),
+                        rs2.eq(regs[rs2_id])
+                    ]
+                    m.next = "EXECUTE"
+                with m.State("EXECUTE"):
+                    m.d.sync += pc.eq(pc + 1)
+                    m.next = "FETCH_INSTR"
 
         # Assign important signals to LEDS
         # Note: fsm.state is only accessible outside of the FSM context
@@ -140,7 +152,7 @@ class SOC(wiring.Component):
             setattr(self, name, newsig)
 
         if platform is None:
-            export(ClockSignal("slow"), "slow_clk")
+            export(ClockSignal("sync"), "sync_clk")
             export(pc, "pc")
             export(instr, "instr")
             export(is_alu_reg, "is_alu_reg")
