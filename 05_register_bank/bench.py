@@ -31,7 +31,6 @@ async def testbench(ctx):
     """ Testbench function to test values from the register bank """
 
     while True:
-        clk = ctx.get(count)
         print(f"pc={ctx.get(soc.pc)}")
         print(f"instr={ctx.get(soc.instr):>032b}")
         print(f"LEDS = {ctx.get(soc.leds):>05b}")
@@ -53,7 +52,6 @@ async def testbench(ctx):
             print("SYSTEM")
         # each instruction requires three clock ticks to execute
         await ctx.tick().repeat(3)
-        Global.prev_clk = clk
 
 
 sim = Simulator(soc)
