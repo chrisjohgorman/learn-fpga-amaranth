@@ -7,8 +7,6 @@ from amaranth.sim import Simulator, Period
 
 soc = SOC()
 
-sim = Simulator(soc)
-
 
 class Global:
 
@@ -48,6 +46,7 @@ async def testbench(ctx):
         Global.prev_pc = pc
 
 
+sim = Simulator(soc)
 sim.add_clock(Period(MHz=1))
 sim.add_testbench(testbench)
 
