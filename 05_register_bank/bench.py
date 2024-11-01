@@ -11,17 +11,10 @@ count = Signal(4)
 soc = SOC()
 
 
-class Global:
-
-    """ Class with member to get rid of the use if the global keyword """
-
-    prev_pc = 0
-
-
 async def process(ctx):
 
-    """ Process function to test values from the register bank.  
-        Create a counter to increment and wait for during the 
+    """ Process function to test values from the register bank.
+        Create a counter to increment and wait for during the
         testbench function. """
 
     count_value = 0  # initialize counter to 0
