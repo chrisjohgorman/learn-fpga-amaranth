@@ -23,7 +23,10 @@ class SOC(wiring.Component):
     def elaborate(self, platform):
 
         """ The register bank groups registers together for use by
-            assembly language programming. """
+            assembly language programming.  In this function the
+            sequence of instructions to be exicuted are executed.
+            These 9 instructions require 3 clock ticks each to
+            execute. """
 
         m = Module()
 
