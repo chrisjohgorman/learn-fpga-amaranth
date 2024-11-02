@@ -323,6 +323,7 @@ class RiscvAssembler():
             imm = self.imm2int(instruction.args[2])
             _, _op, f3 = [x for x in JInstructions if x[0] == instruction.op][0]
             return self.encode_i(imm, rs, f3, rd, 0b1100111)
+        return None
 
     def encode_b_ops(self, instruction):
 
@@ -375,6 +376,7 @@ class RiscvAssembler():
         if op == "EBREAK":
             return 0b00000000000100000000000001110011
         print(f"Unhandled system op {op}")
+        return None
 
     def encode_mem_ops(self, instruction):
 
@@ -390,6 +392,7 @@ class RiscvAssembler():
             b3 = int(instruction.args[2]) & 0xff
             b4 = int(instruction.args[3]) & 0xff
             return (b4 << 24) | (b3 << 16) | (b2 << 8) | b1
+        return None
 
     def encode_debug_ops(self, instruction):
 
@@ -400,6 +403,7 @@ class RiscvAssembler():
         index = len(self.debug_args) - 1
         if op == "TRACE":
             return (index << 24) | 0b11110011
+        return None
 
     def unravel_pseudo_ops(self, instruction):
 
@@ -483,9 +487,13 @@ class RiscvAssembler():
         else:
             print(f"Unhandled instruction / opcode {instruction}")
             sys.exit(1)
-        for label in self.labels:
-            if self.labels[label] == self.pc:
-                print(f"  lab@pc=0x{self.pc:03x}={self.pc} -> {label}")
+        # TODO remove once assured that I have not broken this using .items()
+        # for label in self.labels:
+        #     if self.labels[label] == self.pc:
+        #         print(f"  lab@pc=0x{self.pc:03x}={self.pc} -> {label}")
+        for label, item in self.labels.items():
+            if item == self.pc:
+                print(f"  lab@pc=0x{item:03x}={item} -> {label}")
         if self.pc in self.pseudos:
             print(f"  psu@pc=0x{self.pc:03x}={self.pc} -> "
                   f"{self.pseudos[self.pc]}")
@@ -571,19 +579,19 @@ class RiscvAssembler():
             return offset
         if upp.startswith("LABELREF"):
             print("  found labelref")
-            l = LabelRef.from_string(upp)
-            if l.op == "CALL":
-                offset = self.imm2int(l.arg)
-                print(f"    resolving label {l.arg} -> {offset}")
+            label = LabelRef.from_string(upp)
+            if label.op == "CALL":
+                offset = self.imm2int(label.arg)
+                print(f"    resolving label {label.arg} -> {offset}")
                 # print("offset = {}".format(offset))
-                if l.name == "OFFSET":
+                if label.name == "OFFSET":
                     return offset
-                if l.name == "OFFSET12":
+                if label.name == "OFFSET12":
                     return (offset + 4) & 0xfff
-            elif (l.op in ["J", "BEQZ", "BNEZ", "BGT"]):
-                if l.name == "IMM":
-                    imm = self.imm2int(l.arg)
-                    print(f"    resolving label {l.arg} -> {imm}")
+            elif (label.op in ["J", "BEQZ", "BNEZ", "BGT"]):
+                if label.name == "IMM":
+                    imm = self.imm2int(label.arg)
+                    print(f"    resolving label {label.arg} -> {imm}")
                     return imm
         if arg.startswith('"'):
             if arg.endswith('"'):
@@ -591,7 +599,8 @@ class RiscvAssembler():
                     try:
                         return ord(arg[1])
                     except Exception as exc:
-                        raise ValueError(f"Expected char, but got {arg}") from exc
+                        raise ValueError(f"Expected char, but got "
+                                         f"{arg}") from exc
                 else:
                     raise ValueError(f"Expected quoted char, but got {arg}")
             else:
@@ -606,6 +615,7 @@ class RiscvAssembler():
                     return int(arg, 16)
             else:
                 raise ValueError(f"Can't parse arg {arg}") from e
+        return None
 
     def test_code(self):
 
