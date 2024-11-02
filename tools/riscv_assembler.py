@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
+
+""" module docstring """
+
 import re
+import sys
 
 # instructions
 
@@ -109,16 +113,25 @@ DebugInstructions = [
 ]
 DebugOps = [x[0] for x in DebugInstructions]
 
+
 class LabelRef():
+
+    """ LabelRef class docstring """
+
     def __init__(self, op, name, arg):
         self.op = op
         self.name = name
         self.arg = arg
+
     def __repr__(self):
-        text = "LABELREF({:4} {} {})".format(self.op, self.name, self.arg)
+        text = f"LABELREF({self.op:4} {self.name} {self.arg})"
         return text
+
     @classmethod
-    def fromString(cls, string):
+    def from_string(cls, string):
+
+        """ from_string function docstring """
+
         r = re.compile('[ ()]+')
         args = r.split(string)
         op = args[1]
@@ -127,18 +140,24 @@ class LabelRef():
         # print(args)
         return cls(op, name, arg)
 
+
 class Instruction():
+
+    """ Instruction class docstring """
+
     def __init__(self, op, *args):
         self.op = op
         self.args = args
+
     def __repr__(self):
         text = "("
         for arg in self.args:
-            text += "{:2}".format(arg)
+            text += f"{arg:2}"
             if arg is not self.args[-1]:
                 text += ", "
         text += ")"
-        return "({:4} {})".format(self.op, text)
+        return f"({self.op:4} {text})"
+
 
 abi_names = {
     'zero': 0,
@@ -176,19 +195,26 @@ abi_names = {
     't6'  : 31
 }
 
+
 def reg2int(arg):
+
+    """ reg2int function docstring """
+
     if len(arg) == 0:
         return None
     if arg.lower() in abi_names:
         return abi_names[arg.lower()]
     if arg[0].upper() == "X":
         return int(arg[1:])
-    else:
-        print("Unknown register '{}'".format(arg))
-        exit(-1)
+    print(f"Unknown register '{arg}'")
+    sys.exit(-1)
+
 
 class RiscvAssembler():
-    def __init__(self, simulation = False):
+
+    """ RiscvAssembler class docstring """
+
+    def __init__(self, simulation=False):
         self.pc = 0
         self.labels = {}
         self.constants = {}
@@ -198,20 +224,32 @@ class RiscvAssembler():
         self.debug_args = []
         self.simulation = simulation
 
-        print("Simulation = ", "OFF" if simulation==False else "ON")
+        print("Simulation = ", "OFF" if simulation is False else "ON")
 
     def assemble(self):
+
+        """ assemble function docstring """
+
         for inst in self.instructions:
             self.mem.append(self.encode(inst))
 
-    def encodeR(self, f7, rs2, rs1, f3, rd, op):
+    def encode_r(self, f7, rs2, rs1, f3, rd, op):
+
+        """ encode_r function docstring """
+
         return ((f7 << 25) | (rs2 << 20) | (rs1 << 15)
                 | (f3 << 12) | (rd << 7) | op)
 
-    def encodeI(self, imm, rs, f3, rd, op):
+    def encode_i(self, imm, rs, f3, rd, op):
+
+        """ encode_i function docstring """
+
         return ((imm & 0xfff) << 20) | (rs << 15) | (f3 << 12) | (rd << 7) | op
 
-    def encodeJ(self, imm, rd, op):
+    def encode_j(self, imm, rd, op):
+
+        """ encode_j function docstring """
+
         imm31 = (imm >> 20) & 1
         imm21 = (imm >> 1) & 0x3ff
         imm20 = (imm >> 11) & 1
@@ -219,7 +257,10 @@ class RiscvAssembler():
         return ((imm31 << 31) | (imm21 << 21) | (imm20 << 20)
                 | (imm12 << 12) | (rd << 7) | op)
 
-    def encodeB(self, imm, rs2, rs1, f3, op):
+    def encode_b(self, imm, rs2, rs1, f3, op):
+
+        """ encode_j function docstring """
+
         imm31 = (imm >> 12) & 1
         imm25 = (imm >> 5) & 0x3f
         imm8 =  (imm >> 1) & 0xf
@@ -227,83 +268,118 @@ class RiscvAssembler():
         return ((imm31 << 31) | (imm25 << 25) | (rs2 << 20) | (rs1 << 15)
                 | (f3 << 12) | (imm8 << 8) | (imm7 << 7) | op)
 
-    def encodeU(self, imm, rd, op):
+    def encode_u(self, imm, rd, op):
+
+        """ encode_u function docstring """
+
         return (imm & 0xfffff000) | (rd << 7) | op
 
-    def encodeS(self, imm, rs2, rs1, f3, op):
+    def encode_s(self, imm, rs2, rs1, f3, op):
+
+        """ encode_s function docstring """
+
         imm25 = (imm >> 5) & 0x7f
         imm7  = imm & 0x1f
         return ((imm25 << 25) | (rs2 << 20) | (rs1 << 15)
                 | (f3 << 12) | (imm7 << 7) | op)
 
-    def encodeRops(self, instruction):
+    def encode_r_ops(self, instruction):
+
+        """ encode_r_ops function docstring """
+
         rd, rs1, rs2 = [reg2int(x) for x in instruction.args]
         _, f3, f7 = [x for x in RInstructions if x[0] == instruction.op][0]
-        return self.encodeR(f7, rs2, rs1, f3, rd, 0b0110011)
+        return self.encode_r(f7, rs2, rs1, f3, rd, 0b0110011)
 
-    def encodeIops(self, instruction):
+    def encode_i_ops(self, instruction):
+
+        """ encode_i_ops function docstring """
+
         rd, rs = reg2int(instruction.args[0]), reg2int(instruction.args[1])
         imm = self.imm2int(instruction.args[2])
         _, f3 = [x for x in IInstructions if x[0] == instruction.op][0]
-        return self.encodeI(imm, rs, f3, rd, 0b0010011)
+        return self.encode_i(imm, rs, f3, rd, 0b0010011)
 
-    def encodeIRops(self, instruction):
+    def encode_ir_ops(self, instruction):
+
+        """ encode_ir_ops function docstring """
+
         rd, rs = reg2int(instruction.args[0]), reg2int(instruction.args[1])
         imm = self.imm2int(instruction.args[2])
         _, f3, f7 = [x for x in IRInstructions if x[0] == instruction.op][0]
-        return self.encodeR(f7, imm, rs, f3, rd, 0b0010011)
+        return self.encode_r(f7, imm, rs, f3, rd, 0b0010011)
 
-    def encodeJops(self, instruction):
+    def encode_j_ops(self, instruction):
+
+        """ encode_j_ops function docstring """
+
         if instruction.op == "JAL":
             rd = reg2int(instruction.args[0])
             imm = self.imm2int(instruction.args[1])
-            _, op = [x for x in JInstructions if x[0] == instruction.op][0]
-            return self.encodeJ(imm, rd, 0b1101111)
-        elif instruction.op == "JALR":
+            _, _op = [x for x in JInstructions if x[0] == instruction.op][0]
+            return self.encode_j(imm, rd, 0b1101111)
+        if instruction.op == "JALR":
             rd, rs = reg2int(instruction.args[0]), reg2int(instruction.args[1])
             imm = self.imm2int(instruction.args[2])
-            _, op, f3 = [x for x in JInstructions if x[0] == instruction.op][0]
-            return self.encodeI(imm, rs, f3, rd, 0b1100111)
+            _, _op, f3 = [x for x in JInstructions if x[0] == instruction.op][0]
+            return self.encode_i(imm, rs, f3, rd, 0b1100111)
 
-    def encodeBops(self, instruction):
+    def encode_b_ops(self, instruction):
+
+        """ encode_b_ops function docstring """
+
         rs1, rs2 = reg2int(instruction.args[0]), reg2int(instruction.args[1])
         imm = self.imm2int(instruction.args[2])
         _, f3 = [x for x in BInstructions if x[0] == instruction.op][0]
-        return self.encodeB(imm, rs2, rs1, f3, 0b1100011)
+        return self.encode_b(imm, rs2, rs1, f3, 0b1100011)
 
-    def encodeUops(self, instruction):
+    def encode_u_ops(self, instruction):
+
+        """ encode_u_ops function docstring """
+
         rd = reg2int(instruction.args[0])
         imm = self.imm2int(instruction.args[1])
         _, op = [x for x in UInstructions if x[0] == instruction.op][0]
-        return self.encodeU(imm, rd, op)
+        return self.encode_u(imm, rd, op)
 
-    def encodeLops(self, instruction):
+    def encode_lops(self, instruction):
+
+        """ encode_lops function docstring """
+
         rd, rs = reg2int(instruction.args[0]), reg2int(instruction.args[1])
         imm = self.imm2int(instruction.args[2])
         _, f3 = [x for x in LInstructions if x[0] == instruction.op][0]
-        return self.encodeI(imm, rs, f3, rd, 0b0000011)
+        return self.encode_i(imm, rs, f3, rd, 0b0000011)
 
-    def encodeSops(self, instruction):
+    def encode_s_ops(self, instruction):
+
+        """ encode_s_ops function docstring """
+
         # Swapped rs2, rs1 to match assembly code
         rs2, rs1 = reg2int(instruction.args[0]), reg2int(instruction.args[1])
         imm = self.imm2int(instruction.args[2])
         _, f3 = [x for x in SInstructions if x[0] == instruction.op][0]
-        return self.encodeS(imm, rs2, rs1, f3, 0b0100011)
+        return self.encode_s(imm, rs2, rs1, f3, 0b0100011)
 
-    def encodeSysops(self, instruction):
+    def encode_sys_ops(self, instruction):
+
+        """ encode_sys_ops function docstring """
+
         op = instruction.op
-        if op == "FENCE": #! TODO
+        if op == "FENCE":
             return 0b00000000000000000000000001110011
-        elif op == "FENCE_I":
+        if op == "FENCE_I":
             return 0b00000000000000000001000001110011
-        elif op == "ECALL":
+        if op == "ECALL":
             return 0b00000000000000000000000001110011
-        elif op == "EBREAK":
+        if op == "EBREAK":
             return 0b00000000000100000000000001110011
-        else:
-            print("Unhandled system op {}".format(op))
+        print(f"Unhandled system op {op}")
 
-    def encodeMemops(self, instruction):
+    def encode_mem_ops(self, instruction):
+
+        """ encode_mem_ops function docstring """
+
         op = instruction.op
         if op == "DATAW":
             w = int(instruction.args[0])
@@ -315,130 +391,140 @@ class RiscvAssembler():
             b4 = int(instruction.args[3]) & 0xff
             return (b4 << 24) | (b3 << 16) | (b2 << 8) | b1
 
-    def encodeDebugops(self, instruction):
+    def encode_debug_ops(self, instruction):
+
+        """ encode_debug_ops function docstring """
+
         op = instruction.op
         self.debug_args.append(instruction.args)
         index = len(self.debug_args) - 1
         if op == "TRACE":
             return (index << 24) | 0b11110011
 
-    def unravelPseudoOps(self, instruction):
+    def unravel_pseudo_ops(self, instruction):
+
+        """ encode_pseudo_ops function docstring """
+
         op = instruction.op
         instr = []
         if op == "NOP":
-            instr.append(self.iFromLine("ADD x0, x0, x0"))
+            instr.append(self.i_from_line("ADD x0, x0, x0"))
         elif op == "LI":
             rd = instruction.args[0]
             imm = self.imm2int(instruction.args[1])
             if imm == 0:
-                instr.append(self.iFromLine("ADD {}, zero, zero".format(rd)))
+                instr.append(self.i_from_line(f"ADD {rd}, zero, zero"))
             elif -2048 <= imm < 2048:
-                instr.append(self.iFromLine("ADDI {}, zero, {}".format(
-                    rd, imm)))
+                instr.append(self.i_from_line(f"ADDI {rd}, zero, {imm}"))
             else:
                 imm2 = hex(imm + ((imm & 0x800) << 1))
                 imm12 = hex(imm & 0xfff)
-                instr.append(self.iFromLine("LUI {}, {}".format(rd, imm2)))
+                instr.append(self.i_from_line(f"LUI {rd}, {imm2}"))
                 if imm12 != 0:
-                    instr.append(self.iFromLine("ADDI {}, {}, {}".format(
-                        rd, rd, imm12)))
+                    instr.append(self.i_from_line(f"ADDI {rd}, {rd}, {imm12}"))
         elif op == "CALL":
             ref1 = LabelRef(op, "offset", instruction.args[0])
             ref2 = LabelRef(op, "offset12", instruction.args[0])
-            instr.append(self.iFromLine("AUIPC x6, {}".format(ref1)))
-            instr.append(self.iFromLine("JALR  x1, x6, {}".format(ref2)))
+            instr.append(self.i_from_line(f"AUIPC x6, {ref1}"))
+            instr.append(self.i_from_line(f"JALR  x1, x6, {ref2}"))
         elif op == "RET":
-            instr.append(self.iFromLine("JALR  x0, x1, 0"))
+            instr.append(self.i_from_line("JALR  x0, x1, 0"))
         elif op == "MV":
             rd = instruction.args[0]
             rs1 = instruction.args[1]
-            instr.append(self.iFromLine("ADD   {}, {}, zero".format(rd, rs1)))
+            instr.append(self.i_from_line(f"ADD   {rd}, {rs1}, zero"))
         elif op == "J":
             ref = LabelRef(op, "imm", instruction.args[0])
-            instr.append(self.iFromLine("JAL   zero, {}".format(ref)))
+            instr.append(self.i_from_line(f"JAL   zero, {ref}"))
         elif op == "BEQZ":
             rs1 = instruction.args[0]
             ref = LabelRef(op, "imm", instruction.args[1])
-            instr.append(self.iFromLine("BEQ   {}, x0, {}".format(rs1, ref)))
+            instr.append(self.i_from_line(f"BEQ   {rs1}, x0, {ref}"))
         elif op == "BNEZ":
             rs1 = instruction.args[0]
             ref = LabelRef(op, "imm", instruction.args[1])
-            instr.append(self.iFromLine("BNE   {}, x0, {}".format(rs1, ref)))
+            instr.append(self.i_from_line(f"BNE   {rs1}, x0, {ref}"))
         elif op == "BGT":
             rs1 = instruction.args[0]
             rs2 = instruction.args[1]
             ref = LabelRef(op, "imm", instruction.args[2])
-            instr.append(self.iFromLine("BLT   {}, {}, {}".format(
-                rs2, rs1, ref)))
+            instr.append(self.i_from_line(f"BLT   {rs2}, {rs1}, {ref}"))
         else:
             return [instruction], False
         return instr, True
 
     def encode(self, instruction):
+
+        """ encode function docstring """
+
         encoded = 0
         if instruction.op in ROps:
-            encoded = self.encodeRops(instruction)
+            encoded = self.encode_r_ops(instruction)
         elif instruction.op in IOps:
-            encoded = self.encodeIops(instruction)
+            encoded = self.encode_i_ops(instruction)
         elif instruction.op in IROps:
-            encoded = self.encodeIRops(instruction)
+            encoded = self.encode_ir_ops(instruction)
         elif instruction.op in JOps:
-            encoded = self.encodeJops(instruction)
+            encoded = self.encode_j_ops(instruction)
         elif instruction.op in BOps:
-            encoded = self.encodeBops(instruction)
+            encoded = self.encode_b_ops(instruction)
         elif instruction.op in UOps:
-            encoded = self.encodeUops(instruction)
+            encoded = self.encode_u_ops(instruction)
         elif instruction.op in LOps:
-            encoded = self.encodeLops(instruction)
+            encoded = self.encode_lops(instruction)
         elif instruction.op in SOps:
-            encoded = self.encodeSops(instruction)
+            encoded = self.encode_s_ops(instruction)
         elif instruction.op in SysOps:
-            encoded = self.encodeSysops(instruction)
+            encoded = self.encode_sys_ops(instruction)
         elif instruction.op in MemOps:
-            encoded = self.encodeMemops(instruction)
+            encoded = self.encode_mem_ops(instruction)
         elif instruction.op in DebugOps:
-            encoded = self.encodeDebugops(instruction)
+            encoded = self.encode_debug_ops(instruction)
         else:
-            print("Unhandled instruction / opcode {}".format(instruction))
-            exit(1)
-        for l in self.labels:
-            if self.labels[l] == self.pc:
-                print("  lab@pc=0x{:03x}={} -> {}".format(self.pc, self.pc, l))
+            print(f"Unhandled instruction / opcode {instruction}")
+            sys.exit(1)
+        for label in self.labels:
+            if self.labels[label] == self.pc:
+                print(f"  lab@pc=0x{self.pc:03x}={self.pc} -> {label}")
         if self.pc in self.pseudos:
-            print("  psu@pc=0x{:03x}={} -> {}".format(self.pc, self.pc,
-                                                      self.pseudos[self.pc]))
-        print("  enc@pc=0x{:03x} {} -> 0b{:032b}".format(
-            self.pc, instruction, encoded))
+            print(f"  psu@pc=0x{self.pc:03x}={self.pc} -> "
+                  f"{self.pseudos[self.pc]}")
+        print(f"  enc@pc=0x{self.pc:03x} {instruction} -> 0b{encoded:>032b}")
         self.pc += 4
         return encoded
 
-    def iFromLine(self, line):
+    def i_from_line(self, line):
+
+        """ i_from_line function docstring """
+
         line = line.strip()
         if len(line) == 0:
             return None
         if ' ' not in line:
             return Instruction(line)
-        else:
-            op, rest = [x.strip() for x in (
-                line.split(' ', maxsplit=1))]
-            # print("op = {}, rest = {}".format(op, rest))
-            items = [x.strip() for x in rest.split(',')]
-            return Instruction(op, *items)
+        op, rest = [x.strip() for x in (
+            line.split(' ', maxsplit=1))]
+        # print("op = {}, rest = {}".format(op, rest))
+        items = [x.strip() for x in rest.split(',')]
+        return Instruction(op, *items)
 
     def read(self, text):
+
+        """ read function docstring """
+
         instructions = []
         for line in text.splitlines():
             line = line.strip()
             i = None
             # Quoted characters
             if "TRACE" in line:
-                if self.simulation == False:
+                if self.simulation is False:
                     continue
             if '"' in line:
                 n = line.count('"')
-                if n%2 != 0:
+                if n % 2 != 0:
                     print("Not an even number of quotes. Check code.")
-                    exit(1)
+                    sys.exit(1)
                 # Replace double-quoted characters with their ascii value
                 line = re.sub('"(.)"', lambda m: str(ord(m.group(1))), line)
             # Strip comments
@@ -450,26 +536,29 @@ class RiscvAssembler():
                 name = items[0]
                 value = "".join(items[2:])
                 self.constants[name.upper()] = int(value)
-                print("found equ '{}', value = '{}'".format(name, value))
+                print(f"found equ '{name}', value = '{value}'")
                 continue
             # Labels
             if ':' in line:
                 label, line = [x.strip() for x in line.split(':', maxsplit=1)]
                 pc = len(instructions) * 4
                 self.labels[label.upper()] = pc
-                print("found label '{}', pc = {}".format(label, pc))
-            i = self.iFromLine(line)
+                print(f"found label '{label}', pc = {pc}")
+            i = self.i_from_line(line)
             if i is not None:
-                unravelled, isPseudo = self.unravelPseudoOps(i)
-                if isPseudo:
+                unravelled, is_pseudo = self.unravel_pseudo_ops(i)
+                if is_pseudo:
                     pc = len(instructions) * 4
                     self.pseudos[pc] = i.op
-                    print("found peudo '{}', pc = {}".format(i.op, pc))
+                    print(f"found peudo '{i.op}', pc = {pc}")
                 for u in unravelled:
                     instructions.append(u)
         self.instructions += instructions
 
     def imm2int(self, arg):
+
+        """ imm2int function docstring """
+
         upp = arg.upper()
         if len(arg) == 0:
             return None
@@ -482,10 +571,10 @@ class RiscvAssembler():
             return offset
         if upp.startswith("LABELREF"):
             print("  found labelref")
-            l = LabelRef.fromString(upp)
+            l = LabelRef.from_string(upp)
             if l.op == "CALL":
                 offset = self.imm2int(l.arg)
-                print("    resolving label {} -> {}".format(l.arg, offset))
+                print(f"    resolving label {l.arg} -> {offset}")
                 # print("offset = {}".format(offset))
                 if l.name == "OFFSET":
                     return offset
@@ -494,31 +583,34 @@ class RiscvAssembler():
             elif (l.op in ["J", "BEQZ", "BNEZ", "BGT"]):
                 if l.name == "IMM":
                     imm = self.imm2int(l.arg)
-                    print("    resolving label {} -> {}".format(l.arg, imm))
+                    print(f"    resolving label {l.arg} -> {imm}")
                     return imm
         if arg.startswith('"'):
             if arg.endswith('"'):
                 if len(arg) == 3:
                     try:
                         return ord(arg[1])
-                    except:
-                        raise ValueError("Expected char, but got {}".format(arg))
+                    except Exception as exc:
+                        raise ValueError(f"Expected char, but got {arg}") from exc
                 else:
-                    raise ValueError("Expected quoted char, but got {}".format(arg))
+                    raise ValueError(f"Expected quoted char, but got {arg}")
             else:
-                raise ValueError("Strange argument: {}".format(arg))
+                raise ValueError(f"Strange argument: {arg}")
         try:
             return int(arg)
         except ValueError as e:
             if 'B' in upp[1]:
                 return int(arg, 2)
-            elif 'X' in upp:
+            if 'X' in upp:
                 if "0X" == upp[0:2] or "-0X" == upp[0:3]:
                     return int(arg, 16)
             else:
-                raise ValueError("Can't parse arg {}".format(arg))
+                raise ValueError(f"Can't parse arg {arg}") from e
 
-    def testCode(self):
+    def test_code(self):
+
+        """ function test_code docstring """
+
         return """begin:
             slow_bit equ 3
 
@@ -679,8 +771,9 @@ class RiscvAssembler():
 
     """
 
+
 if __name__ == "__main__":
     a = RiscvAssembler(simulation=True)
-    a.read(a.testCode())
+    a.read(a.test_code())
     print(a.instructions)
     a.assemble()
