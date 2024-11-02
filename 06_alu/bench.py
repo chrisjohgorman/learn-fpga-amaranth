@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-""" Module docstring """
+""" This module emulates the arithmetic logic unit (ALU). """
 
 from soc import SOC
 from amaranth import Signal
