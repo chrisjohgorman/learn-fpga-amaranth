@@ -487,10 +487,6 @@ class RiscvAssembler():
         else:
             print(f"Unhandled instruction / opcode {instruction}")
             sys.exit(1)
-        # TODO remove once assured that I have not broken this using .items()
-        # for label in self.labels:
-        #     if self.labels[label] == self.pc:
-        #         print(f"  lab@pc=0x{self.pc:03x}={self.pc} -> {label}")
         for label, item in self.labels.items():
             if item == self.pc:
                 print(f"  lab@pc=0x{item:03x}={item} -> {label}")
