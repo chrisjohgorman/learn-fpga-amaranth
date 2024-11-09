@@ -83,7 +83,7 @@ class SOC(wiring.Component):
         # Immediate format decoder
         u_imm = (Cat(Const(0).replicate(12), instr[12:32]))
         i_imm = (Cat(instr[20:31], instr[31].replicate(21)))
-        s_imm = (Cat(instr[7:12], instr[25:31], instr[31].replicate(21))),
+        s_imm = (Cat(instr[7:12], instr[25:31], instr[31].replicate(21)))
         b_imm = (Cat(0, instr[8:12], instr[25:31], instr[7], instr[31].replicate(20)))
         j_imm = (Cat(0, instr[21:31], instr[20], instr[12:20], instr[31].replicate(12)))
 
@@ -92,7 +92,7 @@ class SOC(wiring.Component):
         rs2_id = instr[20:25]
         rd_id =  instr[7:12]
 
-        # Function code decdore
+        # Function code decoder
         funct3 = instr[12:15]
         funct7 = instr[25:32]
 
@@ -136,7 +136,7 @@ class SOC(wiring.Component):
                     m.d.sync += instr.eq(mem[pc[2:32]])
                     m.next = "FETCH_REGS"
                 with m.State("FETCH_REGS"):
-                    m.d.slow += [
+                    m.d.sync += [
                         rs1.eq(regs[rs1_id]),
                         rs2.eq(regs[rs2_id])
                     ]
