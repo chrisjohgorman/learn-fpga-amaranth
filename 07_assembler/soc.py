@@ -97,7 +97,7 @@ class SOC(wiring.Component):
         rs2_id = instr[20:25]
         rd_id =  instr[7:12]
 
-        # Function code decdore
+        # Function code decoder
         funct3 = instr[12:15]
         funct7 = instr[25:32]
 
