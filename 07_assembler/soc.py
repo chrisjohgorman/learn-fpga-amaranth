@@ -11,6 +11,9 @@ from amaranth.lib.wiring import Out
 
 class SOC(wiring.Component):
 
+    """ This class describes the SOC arithmetic logic unit (ALU) encoding
+        logic instructions with riscv assembler commands """
+
     leds: Out(5)
 
     def __init__(self):
@@ -42,6 +45,12 @@ class SOC(wiring.Component):
         super().__init__()
 
     def elaborate(self, platform):
+
+        """ The arithmetic logic unit performs arithmetical and logic
+            operations.  It receives binary input from registers,
+            performs arithmetical and logic operations and creates,
+            stores and distributes binary output back into registers
+            for further processing. """
 
         m = Module()
 
@@ -105,7 +114,8 @@ class SOC(wiring.Component):
             with m.Case(0b001):
                 m.d.comb += alu_out.eq(alu_in1 << shamt)
             with m.Case(0b010):
-                m.d.comb += alu_out.eq(alu_in1.as_signed() < alu_in2.as_signed())
+                m.d.comb += alu_out.eq(alu_in1.as_signed()
+                                       < alu_in2.as_signed())
             with m.Case(0b011):
                 m.d.comb += alu_out.eq(alu_in1 < alu_in2)
             with m.Case(0b100):
