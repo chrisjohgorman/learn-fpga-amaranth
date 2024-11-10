@@ -29,7 +29,7 @@ class SOC(wiring.Component):
 
         a.assemble()
         self.sequence = a.mem
-        print("memory = {self.sequence}")
+        print(f"memory = {self.sequence}")
 
         super().__init__()
 
