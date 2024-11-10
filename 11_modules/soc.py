@@ -1,9 +1,7 @@
-import sys
-from amaranth import *
-
-from clockworks import Clockworks
 from memory import Memory
 from cpu import CPU
+from amaranth import Elaboratable, Signal, Module, DomainRenamer, ClockSignal
+
 
 class SOC(Elaboratable):
 
@@ -14,13 +12,21 @@ class SOC(Elaboratable):
         # Signals in this list can easily be plotted as vcd traces
         self.ports = []
 
+        # Initialize instance variables being used by this module
+        self.cpu = None
+        self.memory = None
+
     def elaborate(self, platform):
 
         m = Module()
-        cw = Clockworks(m, slow=19, sim_slow=10)
-        memory = DomainRenamer("slow")(Memory())
-        cpu = DomainRenamer("slow")(CPU())
-        m.submodules.cw = cw
+
+        # TODO - establish if this conditional is needed
+        if platform is None:
+            memory = Memory()
+            cpu = CPU()
+        else:
+            memory = DomainRenamer("slow")(Memory())
+            cpu = DomainRenamer("slow")(CPU())
         m.submodules.cpu = cpu
         m.submodules.memory = memory
 
@@ -44,8 +50,8 @@ class SOC(Elaboratable):
 
         # Export signals for simulation
         def export(signal, name):
-            if type(signal) is not Signal:
-                newsig = Signal(signal.shape(), name = name)
+            if not isinstance(signal, Signal):
+                newsig = Signal(signal.shape(), name=name)
                 m.d.comb += newsig.eq(signal)
             else:
                 newsig = signal
@@ -53,30 +59,6 @@ class SOC(Elaboratable):
             setattr(self, name, newsig)
 
         if platform is None:
-            export(ClockSignal("slow"), "slow_clk")
-            #export(pc, "pc")
-            #export(instr, "instr")
-            #export(isALUreg, "isALUreg")
-            #export(isALUimm, "isALUimm")
-            #export(isBranch, "isBranch")
-            #export(isJAL, "isJAL")
-            #export(isJALR, "isJALR")
-            #export(isLoad, "isLoad")
-            #export(isStore, "isStore")
-            #export(isSystem, "isSystem")
-            #export(rdId, "rdId")
-            #export(rs1Id, "rs1Id")
-            #export(rs2Id, "rs2Id")
-            #export(Iimm, "Iimm")
-            #export(Bimm, "Bimm")
-            #export(Jimm, "Jimm")
-            #export(funct3, "funct3")
-            #export(rdId, "rdId")
-            #export(rs1, "rs1")
-            #export(rs2, "rs2")
-            #export(writeBackData, "writeBackData")
-            #export(writeBackEn, "writeBackEn")
-            #export(aluOut, "aluOut")
-            #export((1 << cpu.fsm.state), "state")
+            export(ClockSignal("sync"), "sync_clk")
 
         return m
