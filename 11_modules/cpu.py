@@ -1,4 +1,5 @@
-from amaranth import *
+from amaranth import Module, Signal, Array, Mux, Cat, Const, Elaboratable
+
 
 class CPU(Elaboratable):
 
@@ -7,7 +8,23 @@ class CPU(Elaboratable):
         self.mem_rstrb = Signal()
         self.mem_rdata = Signal(32)
         self.x1 = Signal(32)
+
+        # Initialize instance variables being used by this module
         self.fsm = None
+        self.pc = None
+        self.instr = None
+        self.rd_id = None
+        self.rs1_id = None
+        self.rs2_id = None
+        self.funct3 = None
+        self.i_imm = None
+        self.write_back_data = None
+        self.is_alu_reg = None
+        self.is_alu_imm = None
+        self.is_branch = None
+        self.is_load = None
+        self.is_store = None
+        self.is_system = None
 
     def elaborate(self, platform):
         m = Module()
@@ -17,7 +34,7 @@ class CPU(Elaboratable):
         self.pc = pc
 
         # Current instruction
-        instr = Signal(32, reset=0b0110011)
+        instr = Signal(32, init=0b0110011)
         self.instr = instr
 
         # Register bank
@@ -26,45 +43,45 @@ class CPU(Elaboratable):
         rs2 = Signal(32)
 
         # ALU registers
-        aluOut = Signal(32)
-        takeBranch = Signal(32)
+        alu_out = Signal(32)
+        take_branch = Signal(32)
 
         # Opcode decoder
-        isALUreg = (instr[0:7] == 0b0110011)
-        isALUimm = (instr[0:7] == 0b0010011)
-        isBranch = (instr[0:7] == 0b1100011)
-        isJALR =   (instr[0:7] == 0b1100111)
-        isJAL =    (instr[0:7] == 0b1101111)
-        isAUIPC =  (instr[0:7] == 0b0010111)
-        isLUI =    (instr[0:7] == 0b0110111)
-        isLoad =   (instr[0:7] == 0b0000011)
-        isStore =  (instr[0:7] == 0b0100011)
-        isSystem = (instr[0:7] == 0b1110011)
-        self.isALUreg = isALUreg
-        self.isALUimm = isALUimm
-        self.isBranch = isBranch
-        self.isLoad = isLoad
-        self.isStore = isStore
-        self.isSystem = isSystem
+        is_alu_reg = instr[0:7] == 0b0110011
+        is_alu_imm = instr[0:7] == 0b0010011
+        is_branch =  instr[0:7] == 0b1100011
+        is_jalr =    instr[0:7] == 0b1100111
+        is_jal =     instr[0:7] == 0b1101111
+        is_auipc =   instr[0:7] == 0b0010111
+        is_lui =     instr[0:7] == 0b0110111
+        is_load =    instr[0:7] == 0b0000011
+        is_store =   instr[0:7] == 0b0100011
+        is_system =  instr[0:7] == 0b1110011
+        self.is_alu_reg = is_alu_reg
+        self.is_alu_imm = is_alu_imm
+        self.is_branch = is_branch
+        self.is_load = is_load
+        self.is_store = is_store
+        self.is_system = is_system
 
         # Immediate format decoder
-        Uimm = Cat(Const(0).replicate(12), instr[12:32])
-        Iimm = Cat(instr[20:31], instr[31].replicate(21))
-        Simm = Cat(instr[7:12], instr[25:31], instr[31].replicate(21))
-        Bimm = Cat(0, instr[8:12], instr[25:31], instr[7],
-            instr[31].replicate(20))
-        Jimm = Cat(0, instr[21:31], instr[20], instr[12:20],
-            instr[31].replicate(12))
-        self.Iimm = Iimm
+        u_imm = Cat(Const(0).replicate(12), instr[12:32])
+        i_imm = Cat(instr[20:31], instr[31].replicate(21))
+        s_imm = Cat(instr[7:12], instr[25:31], instr[31].replicate(21))
+        b_imm = Cat(0, instr[8:12], instr[25:31], instr[7],
+                    instr[31].replicate(20))
+        j_imm = Cat(0, instr[21:31], instr[20], instr[12:20],
+                    instr[31].replicate(12))
+        self.i_imm = i_imm
 
         # Register addresses decoder
-        rs1Id = instr[15:20]
-        rs2Id = instr[20:25]
-        rdId = instr[7:12]
+        rs1_id = instr[15:20]
+        rs2_id = instr[20:25]
+        rd_id = instr[7:12]
 
-        self.rdId = rdId
-        self.rs1Id = rs1Id
-        self.rs2Id = rs2Id
+        self.rd_id = rd_id
+        self.rs1_id = rs1_id
+        self.rs2_id = rs2_id
 
         # Function code decdore
         funct3 = instr[12:15]
@@ -72,94 +89,120 @@ class CPU(Elaboratable):
         self.funct3 = funct3
 
         # ALU
-        aluIn1 = rs1
-        aluIn2 = Mux(isALUreg, rs2, Iimm)
-        shamt = Mux(isALUreg, rs2[0:5], instr[20:25])
+        alu_in1 = rs1
+        alu_in2 = Mux(is_alu_reg, rs2, i_imm)
+        shamt = Mux(is_alu_reg, rs2[0:5], instr[20:25])
 
         # Wire memory address to pc
         m.d.comb += self.mem_addr.eq(pc)
 
-        with m.Switch(funct3) as alu:
+        with m.Switch(funct3) as _:
             with m.Case(0b000):
-                m.d.comb += aluOut.eq(Mux(funct7[5] & instr[5],
-                                          (aluIn1 - aluIn2), (aluIn1 + aluIn2)))
+                m.d.comb += alu_out.eq(Mux(funct7[5] & instr[5],
+                                           (alu_in1 - alu_in2),
+                                           (alu_in1 + alu_in2)))
             with m.Case(0b001):
-                m.d.comb += aluOut.eq(aluIn1 << shamt)
+                m.d.comb += alu_out.eq(alu_in1 << shamt)
             with m.Case(0b010):
-                m.d.comb += aluOut.eq(aluIn1.as_signed() < aluIn2.as_signed())
+                m.d.comb += alu_out.eq(alu_in1.as_signed()
+                                       < alu_in2.as_signed())
             with m.Case(0b011):
-                m.d.comb += aluOut.eq(aluIn1 < aluIn2)
+                m.d.comb += alu_out.eq(alu_in1 < alu_in2)
             with m.Case(0b100):
-                m.d.comb += aluOut.eq(aluIn1 ^ aluIn2)
+                m.d.comb += alu_out.eq(alu_in1 ^ alu_in2)
             with m.Case(0b101):
-                m.d.comb += aluOut.eq(Mux(
+                m.d.comb += alu_out.eq(Mux(
                     funct7[5],
-                    (aluIn1.as_signed() >> shamt),     # arithmetic right shift
-                    (aluIn1.as_unsigned() >> shamt)))  # logical right shift
+                    (alu_in1.as_signed() >> shamt),  # arithmetic right shift
+                    (alu_in1.as_unsigned() >> shamt)))  # logical right shift
             with m.Case(0b110):
-                m.d.comb += aluOut.eq(aluIn1 | aluIn2)
+                m.d.comb += alu_out.eq(alu_in1 | alu_in2)
             with m.Case(0b111):
-                m.d.comb += aluOut.eq(aluIn1 & aluIn2)
+                m.d.comb += alu_out.eq(alu_in1 & alu_in2)
 
-        with m.Switch(funct3) as alu_branch:
+        with m.Switch(funct3) as _:
             with m.Case(0b000):
-                m.d.comb += takeBranch.eq(rs1 == rs2)
+                m.d.comb += take_branch.eq(rs1 == rs2)
             with m.Case(0b001):
-                m.d.comb += takeBranch.eq(rs1 != rs2)
+                m.d.comb += take_branch.eq(rs1 != rs2)
             with m.Case(0b100):
-                m.d.comb += takeBranch.eq(rs1.as_signed() < rs2.as_signed())
+                m.d.comb += take_branch.eq(rs1.as_signed() < rs2.as_signed())
             with m.Case(0b101):
-                m.d.comb += takeBranch.eq(rs1.as_signed() >= rs2.as_signed())
+                m.d.comb += take_branch.eq(rs1.as_signed() >= rs2.as_signed())
             with m.Case(0b110):
-                m.d.comb += takeBranch.eq(rs1 < rs2)
+                m.d.comb += take_branch.eq(rs1 < rs2)
             with m.Case(0b111):
-                m.d.comb += takeBranch.eq(rs1 >= rs2)
+                m.d.comb += take_branch.eq(rs1 >= rs2)
             with m.Case("---"):
-                m.d.comb += takeBranch.eq(0)
+                m.d.comb += take_branch.eq(0)
 
         # Next program counter is either next intstruction or depends on
         # jump target
-        nextPc = Mux((isBranch & takeBranch), pc + Bimm,
-                     Mux(isJAL, pc + Jimm,
-                         Mux(isJALR, rs1 + Iimm,
-                             pc + 4)))
+        next_pc = Mux((is_branch & take_branch), pc + b_imm,
+                      Mux(is_jal, pc + j_imm,
+                      Mux(is_jalr, rs1 + i_imm, pc + 4)))
 
         # Main state machine
-        with m.FSM(reset="FETCH_INSTR") as fsm:
-            self.fsm = fsm
-            m.d.comb += self.mem_rstrb.eq(fsm.ongoing("FETCH_INSTR"))
-            with m.State("FETCH_INSTR"):
-                m.next = "WAIT_INSTR"
-            with m.State("WAIT_INSTR"):
-                m.d.sync += instr.eq(self.mem_rdata)
-                m.next = ("FETCH_REGS")
-            with m.State("FETCH_REGS"):
-                m.d.sync += [
-                    rs1.eq(regs[rs1Id]),
-                    rs2.eq(regs[rs2Id])
-                ]
-                m.next = "EXECUTE"
-            with m.State("EXECUTE"):
-                m.d.sync += pc.eq(nextPc)
-                m.next = "FETCH_INSTR"
+        if platform is None:
+            with m.FSM(reset="FETCH_INSTR") as fsm:
+                self.fsm = fsm
+                m.d.comb += self.mem_rstrb.eq(fsm.ongoing("FETCH_INSTR"))
+                with m.State("FETCH_INSTR"):
+                    m.next = "WAIT_INSTR"
+                with m.State("WAIT_INSTR"):
+                    m.d.sync += instr.eq(self.mem_rdata)
+                    m.next = "FETCH_REGS"
+                with m.State("FETCH_REGS"):
+                    m.d.sync += [
+                        rs1.eq(regs[rs1_id]),
+                        rs2.eq(regs[rs2_id])
+                    ]
+                    m.next = "EXECUTE"
+                with m.State("EXECUTE"):
+                    m.d.sync += pc.eq(next_pc)
+                    m.next = "FETCH_INSTR"
+        else:
+            with m.FSM(reset="FETCH_INSTR") as fsm:
+                self.fsm = fsm
+                m.d.comb += self.mem_rstrb.eq(fsm.ongoing("FETCH_INSTR"))
+                with m.State("FETCH_INSTR"):
+                    m.next = "WAIT_INSTR"
+                with m.State("WAIT_INSTR"):
+                    m.d.slow += instr.eq(self.mem_rdata)
+                    m.next = "FETCH_REGS"
+                with m.State("FETCH_REGS"):
+                    m.d.slow += [
+                        rs1.eq(regs[rs1_id]),
+                        rs2.eq(regs[rs2_id])
+                    ]
+                    m.next = "EXECUTE"
+                with m.State("EXECUTE"):
+                    m.d.slow += pc.eq(next_pc)
+                    m.next = "FETCH_INSTR"
 
         # Register write back
-        writeBackData = Mux((isJAL | isJALR), (pc + 4),
-                            Mux(isLUI, Uimm,
-                                Mux(isAUIPC, (pc + Uimm), aluOut)))
-        writeBackEn = fsm.ongoing("EXECUTE") & (
-                isALUreg |
-                isALUimm |
-                isLUI    |
-                isAUIPC  |
-                isJAL    |
-                isJALR)
+        write_back_data = Mux((is_jal | is_jalr), (pc + 4),
+                              Mux(is_lui, u_imm,
+                                  Mux(is_auipc, (pc + u_imm), alu_out)))
+        write_back_en = fsm.ongoing("EXECUTE") & (
+                is_alu_reg |
+                is_alu_imm |
+                is_lui    |
+                is_auipc  |
+                is_jal    |
+                is_jalr)
 
-        self.writeBackData = writeBackData
+        self.write_back_data = write_back_data
 
-        with m.If(writeBackEn & (rdId != 0)):
-            m.d.sync += regs[rdId].eq(writeBackData)
-            # Also assign to debug output to see what is happening
-            m.d.sync += self.x1.eq(writeBackData)
+        if platform is None:
+            with m.If(write_back_en & (rd_id != 0)):
+                m.d.sync += regs[rd_id].eq(write_back_data)
+                # Also assign to debug output to see what is happening
+                m.d.sync += self.x1.eq(write_back_data)
+        else:
+            with m.If(write_back_en & (rd_id != 0)):
+                m.d.slow += regs[rd_id].eq(write_back_data)
+                # Also assign to debug output to see what is happening
+                m.d.slow += self.x1.eq(write_back_data)
 
         return m
