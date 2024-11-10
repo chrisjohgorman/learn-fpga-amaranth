@@ -43,7 +43,7 @@ class SOC(wiring.Component):
             performs arithmetical and logic operations and creates,
             stores and distributes binary output back into registers
             for further processing. To implement branches we add a
-            take_branch Signal, make a switch case based on the vaule
+            take_branch Signal, make a switch case based on the value
             of funct3 which determines the type of the branch and modify
             next_pc, adding a case for branches.  """
 

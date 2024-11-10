@@ -26,13 +26,13 @@ async def testbench(ctx):
             print(f"instr={ctx.get(soc.instr):>032b}")
             print(f"LEDS = {ctx.get(soc.leds):>05b}")
             if ctx.get(soc.is_alu_reg):
-                print(f"ALUreg rd={ctx.get(soc.rd_id)} "
+                print(f"alu_reg rd={ctx.get(soc.rd_id)} "
                       f"rs1={ctx.get(soc.rs1_id)} "
                       f"rs2={ctx.get(soc.rs2_id)} "
                       f"i_imm={ctx.get(soc.i_imm)} "
                       f"funct3={ctx.get(soc.funct3)}")
             if ctx.get(soc.is_alu_imm):
-                print(f"ALUimm rd={ctx.get(soc.rd_id)} "
+                print(f"alu_imm rd={ctx.get(soc.rd_id)} "
                       f"rs1={ctx.get(soc.rs1_id)} "
                       f"imm={ctx.get(soc.i_imm)} "
                       f"funct3={ctx.get(soc.funct3)}")
