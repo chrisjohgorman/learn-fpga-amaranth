@@ -1,5 +1,6 @@
-from amaranth import *
 from riscv_assembler import RiscvAssembler
+from amaranth import Elaboratable, Module, Array, Signal
+
 
 class Memory(Elaboratable):
 
@@ -17,10 +18,10 @@ class Memory(Elaboratable):
 
         a.assemble()
         self.instructions = a.mem
-        print("memory = {}".format(self.instructions))
+        print(f"memory = {self.instructions}")
 
         # Instruction memory initialised with above instructions
-        self.mem = Array([Signal(32, reset=x, name="mem")
+        self.mem = Array([Signal(32, init=x, name="mem")
                           for x in self.instructions])
 
         self.mem_addr = Signal(32)
@@ -30,7 +31,11 @@ class Memory(Elaboratable):
     def elaborate(self, platform):
         m = Module()
 
-        with m.If(self.mem_rstrb):
-            m.d.sync += self.mem_rdata.eq(self.mem[self.mem_addr[2:32]])
+        if platform is None:
+            with m.If(self.mem_rstrb):
+                m.d.sync += self.mem_rdata.eq(self.mem[self.mem_addr[2:32]])
+        else:
+            with m.If(self.mem_rstrb):
+                m.d.slow += self.mem_rdata.eq(self.mem[self.mem_addr[2:32]])
 
         return m
