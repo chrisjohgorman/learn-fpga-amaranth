@@ -31,7 +31,7 @@ class Memory(Elaboratable):
         print(f"memory = {self.instructions}")
 
         # Instruction memory initialised with above instructions
-        self.mem = Array([Signal(32, reset=x, name="mem")
+        self.mem = Array([Signal(32, init=x, name="mem")
                           for x in self.instructions])
 
         self.mem_addr = Signal(32)
