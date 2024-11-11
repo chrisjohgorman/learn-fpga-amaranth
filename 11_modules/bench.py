@@ -28,6 +28,10 @@ async def process(ctx):
 
 
 async def testbench(ctx):
+
+    """ Testbench function to test values from the central processing unit
+        using the riscv-assembly file. """
+
     cpu = soc.cpu
     while True:
         state = ctx.get(soc.cpu.fsm.state)
