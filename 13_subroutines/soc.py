@@ -1,6 +1,6 @@
 from memory import Memory
 from cpu import CPU
-from amaranth import Elaboratable, Signal, Module, ClockSignal
+from amaranth import Elaboratable, Signal, Module, ClockSignal, DomainRenamer
 
 
 class SOC(Elaboratable):
@@ -19,8 +19,12 @@ class SOC(Elaboratable):
     def elaborate(self, platform):
 
         m = Module()
-        memory = Memory()
-        cpu = CPU()
+        if platform is None:
+            memory = Memory()
+            cpu = CPU()
+        else:
+            memory = DomainRenamer("slow")(Memory())
+            cpu = DomainRenamer("slow")(CPU())
         m.submodules.cpu = cpu
         m.submodules.memory = memory
 
@@ -52,7 +56,7 @@ class SOC(Elaboratable):
             self.ports.append(newsig)
             setattr(self, name, newsig)
 
-        #if platform is None:
+        if platform is None:
             export(ClockSignal("sync"), "sync_clk")
             #export(pc, "pc")
             #export(instr, "instr")
