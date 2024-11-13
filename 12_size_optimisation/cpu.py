@@ -34,18 +34,18 @@ class CPU(Elaboratable):
     def elaborate(self, platform):
 
         """ The CPU module needs to reuse it's computations to reduce the
-        number of lookup tables required for the chip.  We need to compute
-        a 33 bit subtraction for comparisons and test the sign bit.  This
-        is done by alu_minus  Then three wires, eq, ltu and lt are created
-        to test the three conditions equality, unsigned comparison and sign
-        differences.  alu_out is then determined by a switch case.  We reuse
-        eq, ltu and lt signals to determine take_branch.  We reuse the ALU's
-        computation of rs1 + i_imm instead of an adder to compute JALR.  We
-        replace the ALU's right shift shifters (for logical right shifts and
-        arithmetic right shifts) with one 33 bit shifter.  We use the same
-        shifter for left shifts by flipping the input and output.  Finally
-        we use the adder created for address computation by next_pc and
-        write_back_data. """
+            number of lookup tables required for the chip.  We need to compute
+            a 33 bit subtraction for comparisons and test the sign bit.  This
+            is done by alu_minus  Then three wires, eq, ltu and lt are created
+            to test the three conditions equality, unsigned comparison and sign
+            differences.  alu_out is then determined by a switch case.  We reuse
+            eq, ltu and lt signals to determine take_branch.  We reuse the ALU's
+            computation of rs1 + i_imm instead of an adder to compute JALR.  We
+            replace the ALU's right shift shifters (for logical right shifts and
+            arithmetic right shifts) with one 33 bit shifter.  We use the same
+            shifter for left shifts by flipping the input and output.  Finally
+            we use the adder created for address computation by next_pc and
+            write_back_data. """
 
         m = Module()
 
