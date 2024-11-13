@@ -77,5 +77,5 @@ sim.add_clock(Period(MHz=1))
 sim.add_process(process)
 sim.add_testbench(testbench)
 
-with sim.write_vcd('bench.vcd', 'bench.gtkw', traces=soc.ports):
+with sim.write_vcd('bench.vcd', 'bench.gtkw'):
     sim.run_until(Period(MHz=1) * 1000)

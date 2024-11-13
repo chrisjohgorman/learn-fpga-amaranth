@@ -1,7 +1,12 @@
+""" This module is the CPU module of the SOC. """
+
 from amaranth import Module, Signal, Array, Mux, Cat, Const, Elaboratable, C
 
 
 class CPU(Elaboratable):
+
+    """ This class describes the central processing unit (CPU) of our
+        system on chip (SOC). """
 
     def __init__(self):
         self.mem_addr = Signal(32)
@@ -27,6 +32,15 @@ class CPU(Elaboratable):
         self.is_system = None
 
     def elaborate(self, platform):
+
+        """ The main change in this CPU module is to make all of the
+            opcode decoder variables signals and add their values to
+            the combinational domain.  This includes, is_alu_reg,
+            is_alu_imm, is_branch, is_jalr, is_jal, is_auipc, is_lui,
+            is_load and is_store.  With this change, alu_in1, alu_in2,
+            shamt, alu_plus and alu_minus have all been made into signals
+            add been added to the combinational domain. """
+
         m = Module()
 
         # Program counter
@@ -98,7 +112,7 @@ class CPU(Elaboratable):
         self.rs1_id = rs1_id
         self.rs2_id = rs2_id
 
-        # Function code decdore
+        # Function code decoder
         funct3 = instr[12:15]
         funct7 = instr[25:32]
         self.funct3 = funct3
@@ -132,7 +146,6 @@ class CPU(Elaboratable):
             a = [x[i] for i in range(0, 32)]
             return Cat(*reversed(a))
 
-        # TODO: check these again!
         shifter_in = Mux(funct3 == 0b001, flip32(alu_in1), alu_in1)
         shifter = Cat(shifter_in, (instr[30] & alu_in1[31])) >> alu_in2[0:5]
         leftshift = flip32(shifter)
