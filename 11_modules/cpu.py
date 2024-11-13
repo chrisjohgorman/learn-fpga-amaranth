@@ -102,7 +102,7 @@ class CPU(Elaboratable):
         self.rs1_id = rs1_id
         self.rs2_id = rs2_id
 
-        # Function code decdore
+        # Function code decoder
         funct3 = instr[12:15]
         funct7 = instr[25:32]
         self.funct3 = funct3

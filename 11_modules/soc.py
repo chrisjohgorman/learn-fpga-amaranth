@@ -14,9 +14,6 @@ class SOC(Elaboratable):
 
         self.leds = Signal(5)
 
-        # Signals in this list can easily be plotted as vcd traces
-        self.ports = []
-
         # Initialize instance variables being used by this module
         self.cpu = None
         self.memory = None
