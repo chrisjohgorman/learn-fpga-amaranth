@@ -1,7 +1,12 @@
+""" This module is the CPU module of the SOC. """
+
 from amaranth import Module, Signal, Array, Mux, Cat, Const, Elaboratable, C
 
 
 class CPU(Elaboratable):
+
+    """ This class describes the central processing unit (CPU) of our
+        system on chip (SOC). """
 
     def __init__(self):
         self.mem_addr = Signal(32)
@@ -27,6 +32,21 @@ class CPU(Elaboratable):
         self.is_system = None
 
     def elaborate(self, platform):
+
+        """ The CPU module needs to reuse it's computations to reduce the
+        number of lookup tables required for the chip.  We need to compute
+        a 33 bit subtraction for comparisons and test the sign bit.  This
+        is done by alu_minus  Then three wires, eq, ltu and lt are created
+        to test the three conditions equality, unsigned comparison and sign
+        differences.  alu_out is then determined by a switch case.  We reuse
+        eq, ltu and lt signals to determine take_branch.  We reuse the ALU's
+        computation of rs1 + i_imm instead of an adder to compute JALR.  We
+        replace the ALU's right shift shifters (for logical right shifts and
+        arithmetic right shifts) with one 33 bit shifter.  We use the same
+        shifter for left shifts by flipping the input and output.  Finally
+        we use the adder created for address computation by next_pc and
+        write_back_data. """
+
         m = Module()
 
         # Program counter
@@ -86,7 +106,7 @@ class CPU(Elaboratable):
         self.rs1_id = rs1_id
         self.rs2_id = rs2_id
 
-        # Function code decdore
+        # Function code decoder
         funct3 = instr[12:15]
         funct7 = instr[25:32]
         self.funct3 = funct3
@@ -110,7 +130,6 @@ class CPU(Elaboratable):
             a = [x[i] for i in range(0, 32)]
             return Cat(*reversed(a))
 
-        # TODO: check these again!
         shifter_in = Mux(funct3 == 0b001, flip32(alu_in1), alu_in1)
         shifter = Cat(shifter_in, (instr[30] & alu_in1[31])) >> alu_in2[0:5]
         leftshift = flip32(shifter)
@@ -150,7 +169,7 @@ class CPU(Elaboratable):
             with m.Case("---"):
                 m.d.comb += take_branch.eq(0)
 
-        # Next program counter is either next intstruction or depends on
+        # Next program counter is either next instruction or depends on
         # jump target
         pc_plus_imm = pc + Mux(instr[3], j_imm[0:32],
                                Mux(instr[4], u_imm[0:32], b_imm[0:32]))
