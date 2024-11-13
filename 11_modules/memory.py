@@ -1,8 +1,13 @@
+""" First iteration of separation of the system on chip into three modules.
+    This module is for the memory. """
+
 from riscv_assembler import RiscvAssembler
 from amaranth import Elaboratable, Module, Array, Signal
 
 
 class Memory(Elaboratable):
+
+    """ This class describes the memory of our system on chip. """
 
     def __init__(self):
         a = RiscvAssembler()
@@ -29,6 +34,11 @@ class Memory(Elaboratable):
         self.mem_rstrb = Signal()
 
     def elaborate(self, platform):
+
+        """ The memory module sets either the sync domain or slow domain
+            depending on whether or not we are being simulated.  If we are
+            simulated it is sync, otherwise it is slow. """
+
         m = Module()
 
         if platform is None:

@@ -1,13 +1,22 @@
+""" First iteration of separation of the system on chip into three modules.
+    This module is the CPU. """
+
 from amaranth import Module, Signal, Array, Mux, Cat, Const, Elaboratable
 
 
 class CPU(Elaboratable):
+
+    """ This class describes the central processing unit (CPU) of our
+        system on chip (SOC). """
 
     def __init__(self):
         self.mem_addr = Signal(32)
         self.mem_rstrb = Signal()
         self.mem_rdata = Signal(32)
         self.x1 = Signal(32)
+
+        # Signals in this list can easily be plotted as vcd traces
+        self.ports = []
 
         # Initialize instance variables being used by this module
         self.fsm = None
@@ -27,6 +36,16 @@ class CPU(Elaboratable):
         self.is_system = None
 
     def elaborate(self, platform):
+
+        """ The CPU module has a mem_addr signal as output, a mem_rdata
+            signal as input and a mem_rstrb signal as output.  There is a x1
+            signal that contains the contents of register x1 that will be
+            plugged into the LEDs for visual debugging.  Also we have added an
+            extra state to the finite state machine. As with the memory
+            we have a conditional execution of the finite state machine and
+            the write_back_data.  If we are simulating, we use the sync domain
+            and if we're writing to the FPGA we use the slow domain. """
+
         m = Module()
 
         # Program counter
@@ -136,7 +155,7 @@ class CPU(Elaboratable):
             with m.Case("---"):
                 m.d.comb += take_branch.eq(0)
 
-        # Next program counter is either next intstruction or depends on
+        # Next program counter is either next instruction or depends on
         # jump target
         next_pc = Mux((is_branch & take_branch), pc + b_imm,
                       Mux(is_jal, pc + j_imm,
@@ -187,9 +206,9 @@ class CPU(Elaboratable):
         write_back_en = fsm.ongoing("EXECUTE") & (
                 is_alu_reg |
                 is_alu_imm |
-                is_lui    |
-                is_auipc  |
-                is_jal    |
+                is_lui     |
+                is_auipc   |
+                is_jal     |
                 is_jalr)
 
         self.write_back_data = write_back_data

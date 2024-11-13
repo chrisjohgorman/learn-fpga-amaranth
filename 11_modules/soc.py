@@ -1,9 +1,14 @@
+""" First iteration of separation of the system on chip into three modules.
+    This is the main module, the SOC. """
+
 from memory import Memory
 from cpu import CPU
-from amaranth import Elaboratable, Signal, Module, DomainRenamer, ClockSignal
+from amaranth import Elaboratable, Signal, Module, DomainRenamer
 
 
 class SOC(Elaboratable):
+
+    """ This class describe the SOC itself. """
 
     def __init__(self):
 
@@ -17,6 +22,11 @@ class SOC(Elaboratable):
         self.memory = None
 
     def elaborate(self, platform):
+
+        """ Here we connect the CPU and memory modules.  The memory module
+            mem_addr, mem_rstrb and mem_rdata get connected to their
+            respective CPU counterparts.  Then we connect the x1 register
+            to the LEDs. """
 
         m = Module()
 
@@ -47,18 +57,5 @@ class SOC(Elaboratable):
             x1.eq(cpu.x1),
             self.leds.eq(x1[0:5])
         ]
-
-        # Export signals for simulation
-        def export(signal, name):
-            if not isinstance(signal, Signal):
-                newsig = Signal(signal.shape(), name=name)
-                m.d.comb += newsig.eq(signal)
-            else:
-                newsig = signal
-            self.ports.append(newsig)
-            setattr(self, name, newsig)
-
-        if platform is None:
-            export(ClockSignal("sync"), "sync_clk")
 
         return m
