@@ -1,7 +1,12 @@
+""" This module is the CPU module of the SOC. """
+
 from amaranth import Module, Signal, Array, Mux, Cat, Const, Elaboratable, C
 
 
 class CPU(Elaboratable):
+
+    """ This class describes the central processing unit (CPU) of our
+        system on chip (SOC). """
 
     def __init__(self):
         self.mem_addr = Signal(32)
@@ -27,6 +32,18 @@ class CPU(Elaboratable):
         self.is_system = None
 
     def elaborate(self, platform):
+
+        """ This CPU module uses a loop to compute a slow down instead of
+            using the clockworks's slow parameter.  To accomplish this we
+            leverage the fact that the return address will be stored in x1.
+            Therefore when we call JAL(x1, offset) where offset is the
+            difference between the program counter and the address of the
+            function to be called.  Returning from a function is done by
+            jumping to the address stored in x1.  This is accomplished by
+            JALR(x0, x1, 0).  Since x1 is used to store the return address
+            of functions, we will move the blinking led wire from x1 to x10.
+            """
+
         m = Module()
 
         # Program counter
@@ -87,7 +104,7 @@ class CPU(Elaboratable):
         self.rs1_id = rs1_id
         self.rs2_id = rs2_id
 
-        # Function code decdore
+        # Function code decoder
         funct3 = instr[12:15]
         funct7 = instr[25:32]
         self.funct3 = funct3
@@ -111,7 +128,6 @@ class CPU(Elaboratable):
             a = [x[i] for i in range(0, 32)]
             return Cat(*reversed(a))
 
-        # TODO: check these again!
         shifter_in = Mux(funct3 == 0b001, flip32(alu_in1), alu_in1)
         shifter = Cat(shifter_in, (instr[30] & alu_in1[31])) >> alu_in2[0:5]
         leftshift = flip32(shifter)
@@ -151,7 +167,7 @@ class CPU(Elaboratable):
             with m.Case("---"):
                 m.d.comb += take_branch.eq(0)
 
-        # Next program counter is either next intstruction or depends on
+        # Next program counter is either next instruction or depends on
         # jump target
         pc_plus_imm = pc + Mux(instr[3], j_imm[0:32],
                                Mux(instr[4], u_imm[0:32], b_imm[0:32]))
