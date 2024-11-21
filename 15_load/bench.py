@@ -4,27 +4,9 @@
     of the code used in the arithmetic logic unit (ALU). """
 
 from soc import SOC
-from amaranth import Signal
 from amaranth.sim import Simulator, Period
 
-en = Signal(init=1)
-count = Signal(4)
 soc = SOC()
-
-
-async def process(ctx):
-
-    """ Process function to test values from the arithmetic logic unit
-        using the riscv-assembler.  Create a counter to increment and
-        wait for during the testbench function. """
-
-    count_value = 0  # initialize counter to 0
-    async for clk_edge, rst_value, en_value in ctx.tick().sample(en):
-        if rst_value:  # can be asserted with or without clk_edge
-            count_value = 0  # re-initialize counter
-        elif clk_edge and en_value:
-            count_value += 1  # advance the counter
-            ctx.set(count, count_value)  # publish its value to the simulation
 
 
 async def testbench(ctx):
@@ -74,8 +56,7 @@ async def testbench(ctx):
 
 sim = Simulator(soc)
 sim.add_clock(Period(MHz=1))
-# sim.add_process(process)
 sim.add_testbench(testbench)
 
-with sim.write_vcd('bench.vcd', 'bench.gtkw', traces=soc.ports):
+with sim.write_vcd('bench.vcd', 'bench.gtkw'):
     sim.run_until(Period(MHz=1) * 1000)
