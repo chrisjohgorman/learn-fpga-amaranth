@@ -59,7 +59,7 @@ if __name__ in "__main__":
     # A platform contains board specific information about FPGA pin
     # assignments, toolchain and specific information for uploading the
     # bitfile.
-    platform = CmodA7_35Platform(toolchain="Xray")
+    platform = CmodA7_35Platform(toolchain="Vivado")
     # To generate the bitstream, we build() the platform using our top level
     # module m.
     # The platform allows access to the various resources defined by the board
