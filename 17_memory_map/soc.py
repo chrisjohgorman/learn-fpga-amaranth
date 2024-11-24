@@ -27,21 +27,16 @@ class SOC(Elaboratable):
 
         m = Module()
 
-        if platform is None:
-            memory = Mem()
-            cpu = CPU()
-        else:
-            clk_frequency = int(platform.default_clk_constraint.frequency)
-            print(f"clock frequency = {clk_frequency}")
-            memory = DomainRenamer("slow")(Mem())
-            cpu = DomainRenamer("slow")(CPU())
-            uart_tx = DomainRenamer("slow")(
-                    UartTx(freq_hz=clk_frequency, baud_rate=1000000))
+        clk_frequency = int(platform.default_clk_constraint.frequency)
+        print(f"clock frequency = {clk_frequency}")
+        memory = DomainRenamer("slow")(Mem())
+        cpu = DomainRenamer("slow")(CPU())
+        uart_tx = DomainRenamer("slow")(
+            UartTx(freq_hz=clk_frequency, baud_rate=345600))
 
         m.submodules.cpu = cpu
         m.submodules.memory = memory
-        if platform is not None:
-            m.submodules.uart_tx = uart_tx
+        m.submodules.uart_tx = uart_tx
 
         self.cpu = cpu
         self.memory = memory
@@ -75,31 +70,32 @@ class SOC(Elaboratable):
             cpu.mem_rdata.eq(Mux(is_ram, ram_rdata, io_rdata))
         ]
 
-        # LEDs
-        with m.If(is_io & mem_wstrb & mem_wordaddr[io_leds_bit]):
-            m.d.sync += self.leds.eq(cpu.mem_wdata)
-
         if platform is not None:
-            # UART
-            uart_valid = Signal()
-            uart_ready = Signal()
+            # LEDs
+            with m.If(is_io & mem_wstrb & mem_wordaddr[io_leds_bit]):
+                m.d.slow += self.leds.eq(cpu.mem_wdata)
 
-            m.d.comb += [
-                uart_valid.eq(is_io & mem_wstrb & mem_wordaddr[io_uart_dat_bit])
-            ]
+        # UART
+        uart_valid = Signal()
+        uart_ready = Signal()
 
-            # Hook up UART
-            m.d.comb += [
-                uart_tx.valid.eq(uart_valid),
-                uart_tx.data.eq(cpu.mem_wdata[0:8]),
-                uart_ready.eq(uart_tx.ready),
-                self.tx.eq(uart_tx.tx)
-            ]
+        m.d.comb += [
+            uart_valid.eq(is_io & mem_wstrb
+                          & mem_wordaddr[io_uart_dat_bit])
+        ]
 
-            # Data from UART
-            m.d.comb += [
-                io_rdata.eq(Mux(mem_wordaddr[io_uart_cntl_bit],
-                                Cat(C(0, 9), ~uart_ready, C(0, 22)), C(0, 32)))
-            ]
+        # Hook up UART
+        m.d.comb += [
+            uart_tx.valid.eq(uart_valid),
+            uart_tx.data.eq(cpu.mem_wdata[0:8]),
+            uart_ready.eq(uart_tx.ready),
+            self.tx.eq(uart_tx.tx)
+        ]
+
+        # Data from UART
+        m.d.comb += [
+            io_rdata.eq(Mux(mem_wordaddr[io_uart_cntl_bit],
+                            Cat(C(0, 9), ~uart_ready, C(0, 22)), C(0, 32)))
+        ]
 
         return m

@@ -4,12 +4,9 @@
 
 from soc import SOC
 from clockworks import Clockworks, CLOCKWORKS_DOMAIN_NAME
-# from amaranth_boards.cmod_a7 import CmodA7_35Platform, Resource, Subsignal, \
-#         Pins, Attrs
-# from amaranth import Module, ClockDomain, Elaboratable
-from amaranth_boards.cmod_a7 import *
-from amaranth import * 
-from amaranth.build import *
+from amaranth_boards.cmod_a7 import CmodA7_35Platform, Resource, Subsignal, \
+        Pins, Attrs
+from amaranth import Module, ClockDomain, Elaboratable
 
 
 class Top(Elaboratable):
@@ -60,7 +57,7 @@ class Top(Elaboratable):
         # Connect the tx port to the SOC
         if hasattr(soc, "tx"):
             m.d.comb += [
-                uart.tx.eq(soc.tx)
+                uart.tx.o.eq(soc.tx)
             ]
 
         return m
@@ -88,6 +85,6 @@ if __name__ in "__main__":
     rgb = platform.request('rgb_led')
 
     board_leds = [led0, led1, rgb.r, rgb.g, rgb.b]
-    uart = platform.request('uart', 1)
+    board_uart = platform.request('uart')
 
-    platform.build(Top(board_leds, uart), do_program=True)
+    platform.build(Top(board_leds, board_uart), do_program=True)
