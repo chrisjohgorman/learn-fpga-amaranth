@@ -20,6 +20,6 @@ if __name__ == "__main__":
     led1 = platform.request('led', 1)
     rgb = platform.request('rgb_led')
     leds = [led0, led1, rgb.r, rgb.g, rgb.b]
-    uart = platform.request('uart', 1)
+    uart = platform.request('uart')
 
     platform.build(Top(leds, uart), do_program=True)

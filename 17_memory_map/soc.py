@@ -26,7 +26,7 @@ class SOC(Elaboratable):
         memory = DomainRenamer("slow")(Mem())
         cpu = DomainRenamer("slow")(CPU())
         uart_tx = DomainRenamer("slow")(
-                UartTx(freq_hz=clk_frequency, baud_rate=1000000))
+                UartTx(freq_hz=clk_frequency, baud_rate=345600))
 
         m.submodules.cw = cw
         m.submodules.cpu = cpu
