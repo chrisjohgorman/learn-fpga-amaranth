@@ -1,8 +1,8 @@
 """ This module is the memory module for our SOC. """
 
 from riscv_assembler import RiscvAssembler
-from amaranth import Elaboratable, Module, Signal
-from amaranth.lib.memory import Memory, WritePort, ReadPort
+from amaranth import Elaboratable, Module, Signal, unsigned
+from amaranth.lib.memory import Memory
 
 
 class Mem(Elaboratable):
@@ -73,9 +73,6 @@ class Mem(Elaboratable):
 
         print(f"memory = {self.instructions}")
 
-        # Instruction memory initialised with above instructions
-        self.mem = Memory(shape=32, depth=len(self.instructions),
-                          init=self.instructions)
 
         self.mem_addr = Signal(32)
         self.mem_rdata = Signal(32)
@@ -91,25 +88,16 @@ class Mem(Elaboratable):
 
         m = Module()
 
-        # TODO - removed transparent=False from r_port, establish it is not
-        # missed.
+        # Instruction memory initialised with above instructions
+        m.submodules.memory = memory = Memory(shape=unsigned(32),
+                                              depth=len(self.instructions),
+                                              init=self.instructions)
+
         # Using the memory module from amaranth library,
         # we can use write_port and read_port to easily instantiate
         # platform specific primitives to access memory efficiently.
-        if platform is None:
-            w_port = self.mem.write_port(
-                domain="sync", granularity=8
-            )
-            r_port = self.mem.read_port(
-                domain="sync"
-            )
-        else:
-            w_port = self.mem.write_port(
-                domain="slow", granularity=8
-            )
-            r_port = self.mem.read_port(
-                domain="slow"
-            )
+        w_port = memory.write_port(domain="slow", granularity=8)
+        r_port = memory.read_port(domain="slow")
 
         word_addr = self.mem_addr[2:32]
 
