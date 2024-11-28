@@ -73,7 +73,6 @@ class Mem(Elaboratable):
 
         print(f"memory = {self.instructions}")
 
-
         self.mem_addr = Signal(32)
         self.mem_rdata = Signal(32)
         self.mem_rstrb = Signal()
