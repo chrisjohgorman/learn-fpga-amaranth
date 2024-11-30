@@ -27,14 +27,22 @@ class SOC(Elaboratable):
             respective CPU counterparts.  Then we connect the x10 register
             to the LEDs.  And finally we connect the UART module. """
 
-        clk_frequency = int(platform.default_clk_constraint.frequency)
-        print(f"clock frequency = {clk_frequency}")
-
         m = Module()
-        memory = DomainRenamer("slow")(Mem())
-        cpu = DomainRenamer("slow")(CPU())
-        uart_tx = DomainRenamer("slow")(
-                UartTx(freq_hz=clk_frequency, baud_rate=345600))
+
+        if platform is None:
+            clk_frequency = 12000000
+            print(f"clock frequency = {clk_frequency}")
+            memory = DomainRenamer("sync")(Mem())
+            cpu = DomainRenamer("sync")(CPU())
+            uart_tx = DomainRenamer("sync")(
+                    UartTx(freq_hz=clk_frequency, baud_rate=345600))
+        else:
+            clk_frequency = int(platform.default_clk_constraint.frequency)
+            print(f"clock frequency = {clk_frequency}")
+            memory = DomainRenamer("slow")(Mem())
+            cpu = DomainRenamer("slow")(CPU())
+            uart_tx = DomainRenamer("slow")(
+                    UartTx(freq_hz=clk_frequency, baud_rate=345600))
 
         m.submodules.cpu = cpu
         m.submodules.memory = memory
@@ -74,7 +82,11 @@ class SOC(Elaboratable):
             cpu.mem_rdata.eq(Mux(is_ram, ram_rdata, io_rdata))
         ]
 
-        if platform is not None:
+        if platform is None:
+            # LEDs
+            with m.If(is_io & mem_wstrb & mem_wordaddr[io_leds_bit]):
+                m.d.sync += self.leds.eq(cpu.mem_wdata)
+        else:
             # LEDs
             with m.If(is_io & mem_wstrb & mem_wordaddr[io_leds_bit]):
                 m.d.slow += self.leds.eq(cpu.mem_wdata)

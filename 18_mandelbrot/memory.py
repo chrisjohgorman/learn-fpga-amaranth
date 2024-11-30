@@ -179,8 +179,12 @@ class Mem(Elaboratable):
         # Using the memory module from amaranth library,
         # we can use write_port and read_port to easily instantiate
         # platform specific primitives to access memory efficiently.
-        w_port = memory.write_port(domain="slow", granularity=8)
-        r_port = memory.read_port(domain="slow")
+        if platform is None:
+            w_port = memory.write_port(domain="sync", granularity=8)
+            r_port = memory.read_port(domain="sync")
+        else:
+            w_port = memory.write_port(domain="slow", granularity=8)
+            r_port = memory.read_port(domain="slow")
 
         word_addr = self.mem_addr[2:32]
 
