@@ -27,12 +27,20 @@ class SOC(Elaboratable):
 
         m = Module()
 
-        clk_frequency = int(platform.default_clk_constraint.frequency)
-        print(f"clock frequency = {clk_frequency}")
-        memory = DomainRenamer("slow")(Mem())
-        cpu = DomainRenamer("slow")(CPU())
-        uart_tx = DomainRenamer("slow")(
-            UartTx(freq_hz=clk_frequency, baud_rate=345600))
+        if platform is None:
+            clk_frequency = 12000000
+            print(f"clock frequency = {clk_frequency}")
+            memory = DomainRenamer("sync")(Mem())
+            cpu = DomainRenamer("sync")(CPU())
+            uart_tx = DomainRenamer("sync")(
+                UartTx(freq_hz=clk_frequency, baud_rate=345600))
+        else:
+            clk_frequency = int(platform.default_clk_constraint.frequency)
+            print(f"clock frequency = {clk_frequency}")
+            memory = DomainRenamer("slow")(Mem())
+            cpu = DomainRenamer("slow")(CPU())
+            uart_tx = DomainRenamer("slow")(
+                UartTx(freq_hz=clk_frequency, baud_rate=345600))
 
         m.submodules.cpu = cpu
         m.submodules.memory = memory
